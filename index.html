@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Lyrics Editor</title>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="drop-overlay" id="dropOverlay">
+  <div class="drop-overlay-text">释放文件以加载</div>
+</div>
+
+<div class="container-fluid py-3">
+
+  <!-- Header -->
+  <div class="row mb-2">
+    <div class="col">
+      <h1 class="h4 mb-0">Web Lyrics Editor</h1>
+    </div>
+  </div>
+
+  <!-- Upload -->
+  <div class="row mb-2">
+    <div class="col-12">
+      <div class="card card-upload">
+        <div class="card-body py-2">
+          <div class="row g-2 align-items-center">
+            <div class="col-auto">
+              <label class="btn btn-sm btn-outline-primary mb-0" for="audioInput">选择音频</label>
+              <input type="file" id="audioInput" accept="audio/*" hidden>
+            </div>
+            <div class="col-auto">
+              <label class="btn btn-sm btn-outline-primary mb-0" for="lrcInput">导入 LRC</label>
+              <input type="file" id="lrcInput" accept=".lrc,.txt" hidden>
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#pasteModal">粘贴歌词</button>
+            </div>
+            <div class="col">
+              <span id="audioName" class="text-muted small ms-1">未选择音频</span>
+            </div>
+            <div class="col-auto">
+              <input type="text" class="form-control form-control-sm" id="titleInput" placeholder="标题" style="width:100px">
+            </div>
+            <div class="col-auto">
+              <input type="text" class="form-control form-control-sm" id="artistInput" placeholder="歌手" style="width:100px">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player + Offset + Focus toggle -->
+  <div class="row mb-2">
+    <div class="col-12">
+      <div class="card card-player">
+        <div class="card-body py-2">
+          <div class="row g-2 align-items-center">
+            <div class="col-12">
+              <audio id="audioPlayer" controls style="width:100%"></audio>
+            </div>
+            <div class="col-auto">
+              <span id="timeDisplay" class="small text-muted font-monospace">00:00.00 / 00:00.00</span>
+            </div>
+            <div class="col">
+              <div class="d-flex align-items-center gap-2">
+                <span class="small text-nowrap">偏移: <span id="offsetValue">0.00</span>s</span>
+                <button class="btn btn-sm btn-outline-secondary btn-offset" id="offsetDec">&minus;</button>
+                <input type="range" class="form-range" id="offsetSlider" min="-200" max="200" value="0" step="1">
+                <button class="btn btn-sm btn-outline-secondary btn-offset" id="offsetInc">+</button>
+              </div>
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-sm btn-outline-secondary" id="focusToggle">专注</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card card-editor">
+        <div class="card-body p-0" id="editorBody">
+          <!-- Table View -->
+          <div id="tableView">
+            <div id="tableContainer">
+              <table class="table table-lyrics mb-0" id="lyricsTable">
+                <thead>
+                  <tr>
+                    <th class="col-indicator"></th>
+                    <th class="col-time">时间</th>
+                    <th>歌词</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Focus View -->
+          <div id="focusView" class="d-none">
+            <div class="focus-container">
+              <div class="focus-nav">
+                <button class="btn btn-outline-secondary btn-sm" id="focusPrev">◀ 上一句</button>
+                <span id="focusIdx" class="mx-2 small">- / -</span>
+                <button class="btn btn-outline-secondary btn-sm" id="focusNext">下一句 ▶</button>
+              </div>
+              <div class="focus-lyric" id="focusLyric">暂无歌词</div>
+              <div class="focus-controls">
+                <span class="focus-time" id="focusTime">00:00.00</span>
+                <button class="btn btn-outline-secondary btn-sm focus-btn" id="focusDec">−</button>
+                <button class="btn btn-outline-secondary btn-sm focus-btn" id="focusInc">+</button>
+                <button class="btn btn-primary btn-sm" id="focusSnap">S 打点</button>
+              </div>
+              <div class="focus-preview">
+                <div class="focus-prev"><span class="text-muted small">上一句:</span> <span id="focusPrevLine"></span></div>
+                <div class="focus-next"><span class="text-muted small">下一句:</span> <span id="focusNextLine"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer py-2">
+          <div class="row align-items-center">
+            <div class="col">
+              <span id="lineCount" class="text-muted small">0 句</span>
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-sm btn-success me-1" id="exportLrc">导出 LRC</button>
+              <button class="btn btn-sm btn-success" id="exportSrt">导出 SRT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key hints -->
+  <div class="row mt-2">
+    <div class="col">
+      <div class="small text-muted">
+        Space 播放/暂停 &middot; S 打点 &middot; F 专注模式 &middot; Esc 退出专注 &middot; ↑↓ 切换行 &middot; ←→ 专注中切换
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Paste Modal -->
+<div class="modal fade" id="pasteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">粘贴歌词文本</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <textarea class="form-control" id="lyricsTextarea" rows="12" placeholder="每行一句歌词，带时间戳的 LRC 格式也可识别"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-sm btn-primary" id="confirmPaste">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/jquery-4.0.0.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

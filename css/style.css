@@ -1,0 +1,240 @@
+/* === No animations on lyrics-related elements === */
+#tableContainer, #tableView, #focusView,
+.table-lyrics, .table-lyrics tr, .table-lyrics td, .table-lyrics th,
+.focus-lyric, .focus-container,
+.col-indicator, .col-time, .col-lyric,
+.lyric-input, .time-text, .time-edit-input {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* === Cards === */
+.card-upload .card-body,
+.card-player .card-body {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.card-editor .card-body {
+  padding: 0;
+}
+
+/* === Table Container === */
+#tableContainer {
+  max-height: 55vh;
+  overflow-y: auto;
+  scroll-behavior: auto;
+}
+
+#tableContainer::-webkit-scrollbar {
+  width: 6px;
+}
+#tableContainer::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+/* === Lyrics Table === */
+.table-lyrics {
+  margin-bottom: 0;
+}
+.table-lyrics th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 1;
+  border-bottom-width: 2px;
+}
+.table-lyrics td,
+.table-lyrics th {
+  vertical-align: middle;
+  padding: 0.3rem 0.5rem;
+}
+
+.col-indicator {
+  width: 32px;
+  text-align: center;
+  font-size: 0.75rem;
+  padding-left: 0.3rem !important;
+  padding-right: 0.3rem !important;
+}
+
+.col-time {
+  width: 175px;
+  white-space: nowrap;
+}
+
+.time-text {
+  cursor: pointer;
+  user-select: none;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.85rem;
+  display: inline-block;
+  min-width: 70px;
+}
+
+.time-edit-input {
+  display: inline-block;
+  width: 85px;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.85rem;
+  padding: 1px 4px;
+}
+
+.btn-time {
+  padding: 0 5px;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  min-width: 22px;
+  margin-left: 2px;
+}
+
+.lyric-input {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 2px 6px;
+  font-size: 0.88rem;
+  width: 100%;
+}
+.lyric-input:focus {
+  background: #fff;
+  border-color: #86b7fe;
+}
+
+/* Active row */
+.table-lyrics tr.active {
+  background-color: #cce5ff !important;
+}
+.table-lyrics tr.active td {
+  border-color: #b8daff;
+}
+.table-lyrics tr.active .lyric-input {
+  background: transparent;
+}
+
+/* Row hover */
+.table-lyrics tbody tr {
+  cursor: pointer;
+}
+.table-lyrics tbody tr:hover {
+  background-color: #f0f7ff;
+}
+.table-lyrics tbody tr.active:hover {
+  background-color: #cce5ff !important;
+}
+
+/* === Focus View === */
+#focusView {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 55vh;
+  padding: 2rem 1rem;
+}
+
+.focus-container {
+  text-align: center;
+  width: 100%;
+  max-width: 750px;
+}
+
+.focus-nav {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.focus-lyric {
+  font-size: 2.2rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  word-break: break-word;
+  color: #212529;
+}
+
+.focus-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.focus-time {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 1.4rem;
+  padding: 0.15rem 0.6rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.focus-btn {
+  font-size: 0.9rem;
+  min-width: 32px;
+}
+
+.focus-preview {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.focus-prev,
+.focus-next {
+  font-size: 0.95rem;
+  padding: 0.2rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === Drop Overlay === */
+.drop-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(13, 110, 253, 0.08);
+  border: 3px dashed #0d6efd;
+  pointer-events: none;
+  align-items: center;
+  justify-content: center;
+}
+.drop-overlay.active {
+  display: flex;
+}
+.drop-overlay-text {
+  background: #0d6efd;
+  color: #fff;
+  padding: 1rem 2.5rem;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+body.drag-over .drop-overlay {
+  display: flex;
+}
+
+/* === Offset Buttons === */
+.btn-offset {
+  padding: 0 7px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  min-width: 28px;
+}
+
+/* === Audio Player === */
+#audioPlayer {
+  width: 100%;
+}
+
+/* === Misc === */
+#audioName {
+  font-size: 0.82rem;
+}
