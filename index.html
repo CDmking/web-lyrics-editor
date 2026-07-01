@@ -94,7 +94,7 @@
               <table class="table table-lyrics mb-0" id="lyricsTable">
                 <thead>
                   <tr>
-                    <th class="col-indicator"></th>
+                    <th class="col-indicator"><button class="btn-head-add" id="headAddBtn" title="在第一行前添加">+</button></th>
                     <th class="col-time">时间</th>
                     <th>歌词</th>
                   </tr>
@@ -113,7 +113,7 @@
               </div>
               <div class="focus-lyric" id="focusLyric">暂无歌词</div>
               <div class="focus-controls">
-                <span class="focus-time" id="focusTime">00:00.00</span>
+                <input class="focus-time" id="focusTime" value="00:00.00">
                 <button class="btn btn-outline-secondary btn-sm focus-btn" id="focusDec">−</button>
                 <button class="btn btn-outline-secondary btn-sm focus-btn" id="focusInc">+</button>
                 <button class="btn btn-primary btn-sm" id="focusSnap">S 打点</button>

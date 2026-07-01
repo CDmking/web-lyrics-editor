@@ -143,6 +143,8 @@ function renderTable() {
     timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'inc').text('+'));
     var lyricTd = $('<td>').addClass('col-lyric');
     lyricTd.append($('<input>').addClass('form-control form-control-sm lyric-input').val(line.text));
+    lyricTd.append($('<button>').addClass('btn-row-add').attr('title', '\u5728\u540e\u6dfb\u52a0').text('+'));
+    lyricTd.append($('<button>').addClass('btn-row-del').attr('title', '\u5220\u9664\u6b64\u884c').html('&times;'));
     tr.append(indicator, timeTd, lyricTd);
     tbody.append(tr);
   });
@@ -178,7 +180,7 @@ function updateLineCount() {
 function renderFocus() {
   if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) {
     $('#focusLyric').text('\u2014').css('fontSize', '2.2rem');
-    $('#focusTime').text('00:00.00');
+    $('#focusTime').val('00:00.00');
     $('#focusIdx').text('- / -');
     $('#focusPrevLine').text('').parent().hide();
     $('#focusNextLine').text('').parent().hide();
@@ -186,7 +188,7 @@ function renderFocus() {
   }
   var line = state.lines[state.currentIdx];
   $('#focusLyric').text(line.text);
-  $('#focusTime').text(timeToStr(line.start));
+  $('#focusTime').val(timeToStr(line.start));
   var idxW = String(state.lines.length).length * 2 + 1;
   $('#focusIdx').text((state.currentIdx + 1) + ' / ' + state.lines.length).css('min-width', idxW + 'em');
   if (state.currentIdx > 0) {
@@ -263,6 +265,36 @@ function snapTime() {
 function adjustTime(idx, delta) {
   if (idx < 0 || idx >= state.lines.length) return;
   state.lines[idx].start = floor2(Math.max(0, state.lines[idx].start + delta));
+  renderTable();
+}
+
+function addLineAt(idx) {
+  var start = 0;
+  var audio = state.audio;
+  if (audio && audio.src && isFinite(audio.currentTime)) {
+    start = floor2(Math.max(0, audio.currentTime - state.offset));
+  } else if (idx > 0 && idx <= state.lines.length && state.lines.length > 0) {
+    start = state.lines[idx - 1].start + 1;
+  } else if (state.lines.length > 0) {
+    start = state.lines[0].start;
+  }
+  state.lines.splice(idx, 0, { start: start, text: '' });
+  state.currentIdx = idx;
+  renderTable();
+  var row = $('#tableBody tr').eq(idx);
+  if (row.length) row.find('.lyric-input').focus();
+}
+
+function deleteLine(idx) {
+  if (state.lines.length === 0) return;
+  state.lines.splice(idx, 1);
+  if (state.lines.length === 0) {
+    state.currentIdx = -1;
+  } else if (idx >= state.lines.length) {
+    state.currentIdx = state.lines.length - 1;
+  } else {
+    state.currentIdx = idx;
+  }
   renderTable();
 }
 
@@ -501,6 +533,27 @@ $(document).ready(function() {
     var newTime = strToTime($(this).val());
     state.lines[idx].start = floor2(newTime);
     renderTable();
+  });
+
+  // Table: add / delete row buttons
+  $('#tableBody').on('click', '.btn-row-add', function() {
+    var idx = $(this).closest('tr').data('idx');
+    addLineAt(idx + 1);
+  });
+  $('#tableBody').on('click', '.btn-row-del', function() {
+    var idx = $(this).closest('tr').data('idx');
+    deleteLine(idx);
+  });
+  $('#headAddBtn').click(function() {
+    addLineAt(0);
+  });
+
+  // Focus: time input direct edit
+  $('#focusTime').on('change', function() {
+    if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) return;
+    var t = strToTime($(this).val());
+    state.lines[state.currentIdx].start = floor2(t);
+    renderFocus();
   });
 
   // Focus mode controls
