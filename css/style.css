@@ -151,6 +151,7 @@
   padding: 1rem;
   white-space: nowrap;
   overflow: hidden;
+  min-height: 5.3rem;
   color: #212529;
 }
 
