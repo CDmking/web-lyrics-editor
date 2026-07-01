@@ -99,9 +99,9 @@ function parseLRC(text) {
 
 // ===== Generators =====
 function generateLRC() {
-  var lrc = '[ti:' + (state.title || 'Untitled') + ']\n';
-  lrc += '[ar:' + (state.artist || 'Unknown') + ']\n';
-  lrc += '[offset:0]\n';
+  var lrc = '';
+  if (state.title) lrc += '[ti:' + state.title + ']\n';
+  if (state.artist) lrc += '[ar:' + state.artist + ']\n';
   state.lines.forEach(function(line) {
     var adjusted = floor2(line.start + state.offset);
     lrc += '[' + timeToStr(adjusted) + ']' + line.text + '\n';
