@@ -187,7 +187,8 @@ function renderFocus() {
   var line = state.lines[state.currentIdx];
   $('#focusLyric').text(line.text);
   $('#focusTime').text(timeToStr(line.start));
-  $('#focusIdx').text((state.currentIdx + 1) + ' / ' + state.lines.length);
+  var idxW = String(state.lines.length).length * 2 + 1;
+  $('#focusIdx').text((state.currentIdx + 1) + ' / ' + state.lines.length).css('min-width', idxW + 'em');
   if (state.currentIdx > 0) {
     $('#focusPrevLine').text(state.lines[state.currentIdx - 1].text).parent().show();
   } else {
@@ -290,6 +291,9 @@ function toggleFocus() {
 function loadLyricsFromLines(newLines) {
   state.lines = newLines;
   state.currentIdx = state.lines.length > 0 ? 0 : -1;
+  state.offset = 0;
+  $('#offsetSlider').val(0);
+  $('#offsetValue').text('0.00');
   if (state.focusMode) {
     renderFocus();
   } else {
