@@ -177,7 +177,7 @@ function updateLineCount() {
 
 function renderFocus() {
   if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) {
-    $('#focusLyric').text('\u2014');
+    $('#focusLyric').text('\u2014').css('fontSize', '2.2rem');
     $('#focusTime').text('00:00.00');
     $('#focusIdx').text('- / -');
     $('#focusPrevLine').text('').parent().hide();
@@ -197,6 +197,17 @@ function renderFocus() {
     $('#focusNextLine').text(state.lines[state.currentIdx + 1].text).parent().show();
   } else {
     $('#focusNextLine').text('(\u65e0)').parent().show();
+  }
+  fitFocusText();
+}
+
+function fitFocusText() {
+  var el = document.getElementById('focusLyric');
+  if (!el || !el.textContent) return;
+  el.style.fontSize = '2.2rem';
+  var w = el.clientWidth;
+  while (el.scrollWidth > w && parseFloat(el.style.fontSize) > 0.8) {
+    el.style.fontSize = (parseFloat(el.style.fontSize) - 0.1) + 'rem';
   }
 }
 
