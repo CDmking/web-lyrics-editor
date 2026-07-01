@@ -50,8 +50,7 @@ var state = {
   offset: 0,
   focusMode: false,
   title: '',
-  artist: '',
-  inlineEditing: false
+  artist: ''
 };
 
 // ===== Bootstrap modals =====
@@ -139,7 +138,7 @@ function renderTable() {
     var indicator = $('<td>').addClass('col-indicator').text(isActive ? '\u25b6' : '');
     var timeStr = timeToStr(line.start);
     var timeTd = $('<td>').addClass('col-time');
-    timeTd.append($('<span>').addClass('time-text').text(timeStr));
+    timeTd.append($('<input>').addClass('form-control form-control-sm time-edit-input').val(timeStr));
     timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'dec').html('&minus;'));
     timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'inc').text('+'));
     var lyricTd = $('<td>').addClass('col-lyric');
@@ -214,9 +213,9 @@ function updateTimeDisplay() {
 
 // ===== Audio Sync =====
 function onTimeUpdate() {
+  updateTimeDisplay();
   var audio = state.audio;
   if (!audio || !audio.src || state.lines.length === 0) return;
-  updateTimeDisplay();
   var adj = audio.currentTime - state.offset;
   var idx = -1;
   for (var i = 0; i < state.lines.length; i++) {
@@ -404,10 +403,16 @@ $(document).ready(function() {
   pasteModal = new bootstrap.Modal('#pasteModal');
 
   // Audio events
-  state.audio.addEventListener('timeupdate', onTimeUpdate);
   state.audio.addEventListener('loadedmetadata', function() {
     updateTimeDisplay();
   });
+
+  // rAF sync loop (~60fps, auto-pauses when tab hidden)
+  function syncLoop() {
+    onTimeUpdate();
+    requestAnimationFrame(syncLoop);
+  }
+  requestAnimationFrame(syncLoop);
 
   // Upload audio
   $('#audioInput').change(function() {
@@ -454,7 +459,7 @@ $(document).ready(function() {
 
   // Table: row click (seek)
   $('#tableBody').on('click', 'tr', function(e) {
-    if ($(e.target).is('button, input, .btn-time, .time-text')) return;
+    if ($(e.target).is('button, input, .btn-time')) return;
     var idx = $(this).data('idx');
     if (idx !== undefined) setCurrentLine(idx);
   });
@@ -475,29 +480,12 @@ $(document).ready(function() {
     if (idx !== undefined) state.lines[idx].text = $(this).val();
   });
 
-  // Table: double-click time to edit inline
-  $('#tableBody').on('dblclick', '.time-text', function() {
-    if (state.inlineEditing) return;
-    state.inlineEditing = true;
+  // Table: time input change
+  $('#tableBody').on('change', '.time-edit-input', function() {
     var idx = $(this).closest('tr').data('idx');
-    var curStr = timeToStr(state.lines[idx].start);
-    var input = $('<input type="text" class="form-control form-control-sm time-edit-input">').val(curStr);
-    $(this).replaceWith(input);
-    input.focus().select();
-    function done(save) {
-      if (!state.inlineEditing) return;
-      state.inlineEditing = false;
-      if (save) {
-        var v = strToTime(input.val());
-        state.lines[idx].start = floor2(v);
-      }
-      renderTable();
-    }
-    input.on('blur', function() { done(true); });
-    input.on('keydown', function(ev) {
-      if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
-      if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); done(false); }
-    });
+    var newTime = strToTime($(this).val());
+    state.lines[idx].start = floor2(newTime);
+    renderTable();
   });
 
   // Focus mode controls

@@ -3,7 +3,7 @@
 .table-lyrics, .table-lyrics tr, .table-lyrics td, .table-lyrics th,
 .focus-lyric, .focus-container,
 .col-indicator, .col-time, .col-lyric,
-.lyric-input, .time-text, .time-edit-input {
+.lyric-input, .time-edit-input {
   transition: none !important;
   animation: none !important;
   scroll-behavior: auto !important;
@@ -65,21 +65,19 @@
   white-space: nowrap;
 }
 
-.time-text {
-  cursor: pointer;
-  user-select: none;
-  font-family: Consolas, 'Courier New', monospace;
-  font-size: 0.85rem;
-  display: inline-block;
-  min-width: 70px;
-}
-
 .time-edit-input {
   display: inline-block;
   width: 85px;
   font-family: Consolas, 'Courier New', monospace;
   font-size: 0.85rem;
   padding: 1px 4px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+.time-edit-input:focus {
+  background: #fff;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
 }
 
 .btn-time {
