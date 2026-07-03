@@ -117,6 +117,7 @@ function generateSRT() {
 
 // ===== Rendering =====
 function renderTable() {
+  _scanStart = 0;
   var tbody = $('#tableBody').empty();
   if (state.lines.length === 0) {
     tbody.append('<tr><td colspan="3" class="text-center text-muted py-4">暂无歌词，请导入 LRC 或粘贴歌词文本</td></tr>');
@@ -152,12 +153,13 @@ function scrollToCurrent() {
 
 function updateHighlight() {
   var idx = state.currentIdx;
-  $('#tableBody tr').each(function() {
-    var i = $(this).data('idx');
-    var isActive = (i === idx);
-    $(this).toggleClass('active', isActive);
-    $(this).find('.col-indicator').text(isActive ? '\u25b6' : '');
-  });
+  _scanStart = Math.max(0, idx);
+  $('#tableBody tr.active').removeClass('active').find('.col-indicator').text('');
+  if (idx >= 0) {
+    var row = $('#tableBody tr').eq(idx);
+    row.addClass('active');
+    row.find('.col-indicator').text('\u25b6');
+  }
   if (state.focusMode) renderFocus();
   scrollToCurrent();
   updateLineCount();
@@ -218,16 +220,27 @@ function updateTimeDisplay() {
 }
 
 // ===== Audio Sync =====
+var _scanStart = 0;
+
 function onTimeUpdate() {
   updateTimeDisplay();
   var audio = state.audio;
   if (!audio || !audio.src || state.lines.length === 0) return;
   var adj = audio.currentTime - state.offset;
+  var lines = state.lines;
   var idx = -1;
-  for (var i = 0; i < state.lines.length; i++) {
-    if (state.lines[i].start <= adj) idx = i;
-    else break;
+  if (_scanStart > 0 && adj >= lines[_scanStart - 1].start) {
+    for (var i = _scanStart; i < lines.length; i++) {
+      if (lines[i].start <= adj) idx = i;
+      else break;
+    }
+  } else {
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].start <= adj) idx = i;
+      else break;
+    }
   }
+  if (idx >= 0) _scanStart = idx;
   if (idx !== state.currentIdx) {
     state.currentIdx = idx;
     updateHighlight();
