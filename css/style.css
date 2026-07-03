@@ -2,7 +2,7 @@
 #tableContainer, #tableView, #focusView,
 .table-lyrics, .table-lyrics tr, .table-lyrics td, .table-lyrics th,
 .focus-lyric, .focus-container,
-.col-indicator, .col-time, .col-lyric,
+.col-indicator, .col-time, .col-lyric, .col-lyric-header,
 .lyric-input, .time-edit-input {
   transition: none !important;
   animation: none !important;
@@ -119,6 +119,12 @@
   color: inherit;
 }
 .btn-head-add:hover { opacity: 1; color: #0d6efd; }
+
+.col-lyric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .lyric-input {
   flex: 1;
