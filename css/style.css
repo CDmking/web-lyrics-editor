@@ -1,12 +1,39 @@
 /* === No animations on lyrics-related elements === */
-#tableContainer, #tableView, #focusView,
-.table-lyrics, .table-lyrics tr, .table-lyrics td, .table-lyrics th,
-.focus-lyric, .focus-container,
-.col-indicator, .col-time, .col-lyric, .col-lyric-header,
-.lyric-input, .time-edit-input {
+#editorBody, #editorBody * {
   transition: none !important;
   animation: none !important;
   scroll-behavior: auto !important;
+}
+
+/* === Full-height flex layout === */
+html, body {
+  height: 100%;
+}
+.container-fluid {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.row-editor {
+  flex: 1;
+  min-height: 0;
+}
+.row-editor > .col-12 {
+  height: 100%;
+  overflow: hidden;
+}
+.row-editor > .col-12 > .card {
+  height: 100%;
+}
+.card-editor {
+  display: flex;
+  flex-direction: column;
+}
+.card-editor .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
 }
 
 /* === Cards === */
@@ -16,13 +43,12 @@
   padding-bottom: 0.5rem;
 }
 
-.card-editor .card-body {
-  padding: 0;
-}
-
 /* === Table Container === */
+#tableView {
+  height: 100%;
+}
 #tableContainer {
-  max-height: 55vh;
+  height: 100%;
   overflow-y: auto;
   scroll-behavior: auto;
 }
@@ -167,7 +193,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 55vh;
+  height: 100%;
   padding: 2rem 1rem;
 }
 

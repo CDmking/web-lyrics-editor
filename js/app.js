@@ -1,21 +1,16 @@
 'use strict';
 
 // ===== Utilities =====
-function pad2(n) { return String(Math.floor(n)).padStart(2, '0'); }
+function pad(n, w) { return String(Math.floor(n)).padStart(w, '0'); }
 
-function pad3(n) { return String(Math.floor(n)).padStart(3, '0'); }
-
-function floor2(t) {
-  if (!isFinite(t) || t < 0) return 0;
-  return Math.floor(t * 100) / 100;
-}
+function floor2(t) { return Math.floor(t * 100) / 100; }
 
 function timeToStr(t) {
   t = floor2(t);
   var m = Math.floor(t / 60);
   var s = Math.floor(t % 60);
   var cs = Math.floor((t % 1) * 100);
-  return pad2(m) + ':' + pad2(s) + '.' + pad2(cs);
+  return pad(m, 2) + ':' + pad(s, 2) + '.' + pad(cs, 2);
 }
 
 function strToTime(s) {
@@ -33,7 +28,7 @@ function timeToSrt(t) {
   var m = Math.floor((t % 3600) / 60);
   var s = Math.floor(t % 60);
   var ms = Math.floor((t % 1) * 1000);
-  return pad2(h) + ':' + pad2(m) + ':' + pad2(s) + ',' + pad3(ms);
+  return pad(h, 2) + ':' + pad(m, 2) + ':' + pad(s, 2) + ',' + pad(ms, 3);
 }
 
 function filenameBase(name) {
@@ -52,9 +47,6 @@ var state = {
   title: '',
   artist: ''
 };
-
-// ===== Bootstrap modals =====
-var pasteModal = null;
 
 // ===== LRC Parser =====
 function parseLRC(text) {
@@ -422,22 +414,12 @@ function onKeyDown(e) {
     }
     return;
   }
-  if (e.key === 'ArrowUp' && !editing) {
+  if ((e.key === 'ArrowUp' || (e.key === 'ArrowLeft' && state.focusMode)) && !editing) {
     e.preventDefault();
     if (state.currentIdx > 0) setCurrentLine(state.currentIdx - 1);
     return;
   }
-  if (e.key === 'ArrowDown' && !editing) {
-    e.preventDefault();
-    if (state.currentIdx < state.lines.length - 1) setCurrentLine(state.currentIdx + 1);
-    return;
-  }
-  if (e.key === 'ArrowLeft' && state.focusMode && !editing) {
-    e.preventDefault();
-    if (state.currentIdx > 0) setCurrentLine(state.currentIdx - 1);
-    return;
-  }
-  if (e.key === 'ArrowRight' && state.focusMode && !editing) {
+  if ((e.key === 'ArrowDown' || (e.key === 'ArrowRight' && state.focusMode)) && !editing) {
     e.preventDefault();
     if (state.currentIdx < state.lines.length - 1) setCurrentLine(state.currentIdx + 1);
     return;
@@ -447,7 +429,7 @@ function onKeyDown(e) {
 // ===== Init =====
 $(document).ready(function() {
   state.audio = document.getElementById('audioPlayer');
-  pasteModal = new bootstrap.Modal('#pasteModal');
+  var pasteModal = new bootstrap.Modal('#pasteModal');
 
   // Audio events
   state.audio.addEventListener('loadedmetadata', function() {
