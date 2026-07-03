@@ -67,8 +67,8 @@ function parseLRC(text) {
       times.push(min * 60 + sec + frac / (match[3].length === 3 ? 1000 : 100));
       remaining = remaining.slice(match[0].length);
     }
-    if (times.length > 0 && remaining.trim()) {
-      lines.push({ start: times[0], text: remaining.trim() });
+    if (times.length > 0) {
+      lines.push({ start: times[0], text: remaining.trim() || '' });
       return;
     }
     var ti = line.match(/^\[ti:(.*)\]/i);
