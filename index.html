@@ -90,15 +90,19 @@
         <div class="card-body p-0" id="editorBody">
           <!-- Table View -->
           <div id="tableView">
-            <div id="tableContainer">
-              <table class="table table-lyrics mb-0" id="lyricsTable">
+            <div id="tableHeader">
+              <table class="table table-lyrics mb-0" id="lyricsHeaderTable">
                 <thead>
                   <tr>
                     <th class="col-indicator"></th>
                     <th class="col-time">时间</th>
-                    <th class="col-lyric-header">歌词 <button class="btn-head-add" id="headAddBtn" title="在第一行前添加">+</button></th>
+                    <th class="col-lyric-header"><span class="col-lyric-header-inner">歌词 <button class="btn-head-add" id="headAddBtn" title="在第一行前添加">+</button></span></th>
                   </tr>
                 </thead>
+              </table>
+            </div>
+            <div id="tableContainer">
+              <table class="table table-lyrics mb-0" id="lyricsTable">
                 <tbody id="tableBody"></tbody>
               </table>
             </div>

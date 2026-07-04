@@ -46,9 +46,15 @@ html, body {
 /* === Table Container === */
 #tableView {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#tableHeader {
+  flex-shrink: 0;
 }
 #tableContainer {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   scroll-behavior: auto;
 }
@@ -64,13 +70,11 @@ html, body {
 /* === Lyrics Table === */
 .table-lyrics {
   margin-bottom: 0;
+  table-layout: fixed;
 }
 .table-lyrics th {
-  position: sticky;
-  top: 0;
-  background: #f8f9fa;
-  z-index: 1;
-  border-bottom-width: 2px;
+  background: rgba(0,0,0,.03);
+  border-bottom: 1px solid rgba(0,0,0,.125);
 }
 .table-lyrics td,
 .table-lyrics th {
@@ -146,7 +150,7 @@ html, body {
 }
 .btn-head-add:hover { opacity: 1; color: #0d6efd; }
 
-.col-lyric-header {
+.col-lyric-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
