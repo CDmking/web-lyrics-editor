@@ -82,6 +82,33 @@ html, body {
   padding: 0.3rem 0.5rem;
 }
 
+.col-drag {
+  width: 32px;
+  text-align: center;
+  padding-left: 0.3rem !important;
+  padding-right: 0.3rem !important;
+}
+
+.drag-handle {
+  display: inline-block;
+  cursor: grab;
+  padding: 2px 4px;
+  color: #999;
+  user-select: none;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.3;
+}
+
+.drag-handle:hover { opacity: 0.8; }
+.drag-handle:active { cursor: grabbing; }
+
+.sortable-chosen { background: #e8f4ff !important; }
+.sortable-ghost {
+  opacity: 0.25;
+  background: #cce5ff !important;
+}
+
 .col-indicator {
   width: 32px;
   text-align: center;
@@ -123,6 +150,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 2px;
+  padding-right: 13px;
 }
 .btn-row-add, .btn-row-del {
   padding: 0 3px;
@@ -179,6 +207,16 @@ html, body {
 }
 .table-lyrics tr.active .lyric-input {
   background: transparent;
+}
+
+/* Disabled row (unreachable due to time inversion) */
+.table-lyrics tr.line-disabled {
+  opacity: 0.35;
+  color: #999 !important;
+}
+.table-lyrics tr.line-disabled input,
+.table-lyrics tr.line-disabled .drag-handle {
+  color: #999 !important;
 }
 
 /* Row hover */

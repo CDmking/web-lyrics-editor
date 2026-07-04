@@ -121,14 +121,18 @@ function renderTable() {
   _scanStart = 0;
   var tbody = $('#tableBody').empty();
   if (state.lines.length === 0) {
-    tbody.append('<tr><td colspan="3" class="text-center text-muted py-4">暂无歌词，请导入 LRC 或粘贴歌词文本</td></tr>');
+    tbody.append('<tr><td colspan="4" class="text-center text-muted py-4">暂无歌词，请导入 LRC 或粘贴歌词文本</td></tr>');
     updateLineCount();
     return;
   }
   if (state.currentIdx >= state.lines.length) state.currentIdx = -1;
+  var prefMax = -Infinity;
   state.lines.forEach(function(line, i) {
     var isActive = (i === state.currentIdx);
-    var tr = $('<tr>').toggleClass('active', isActive).data('idx', i);
+    var isReachable = i === 0 || line.start >= prefMax;
+    if (line.start > prefMax) prefMax = line.start;
+    var tr = $('<tr>').toggleClass('active', isActive).toggleClass('line-disabled', !isReachable).data('idx', i);
+    var dragTd = $('<td>').addClass('col-drag').append($('<span>').addClass('drag-handle').text('\u283f'));
     var indicator = $('<td>').addClass('col-indicator').text(isActive ? '\u25b6' : '');
     var timeStr = timeToStr(line.start);
     var timeTd = $('<td>').addClass('col-time');
@@ -139,11 +143,33 @@ function renderTable() {
     lyricTd.append($('<input>').addClass('form-control form-control-sm lyric-input').val(line.text));
     lyricTd.append($('<button>').addClass('btn-row-add').attr('title', '\u5728\u540e\u6dfb\u52a0').text('+'));
     lyricTd.append($('<button>').addClass('btn-row-del').attr('title', '\u5220\u9664\u6b64\u884c').html('&times;'));
-    tr.append(indicator, timeTd, lyricTd);
+    tr.append(dragTd, indicator, timeTd, lyricTd);
     tbody.append(tr);
   });
   updateLineCount();
   scrollToCurrent();
+  initSortable();
+}
+
+var _sortable = null;
+
+function initSortable() {
+  if (_sortable) _sortable.destroy();
+  var el = document.getElementById('tableBody');
+  if (!el || el.children.length === 0) return;
+  _sortable = new Sortable(el, {
+    handle: '.drag-handle',
+    animation: 150,
+    easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+    onEnd: function(evt) {
+      var fromIdx = evt.oldIndex;
+      var toIdx = evt.newIndex;
+      if (fromIdx === toIdx) return;
+      var item = state.lines.splice(fromIdx, 1)[0];
+      state.lines.splice(toIdx, 0, item);
+      renderTable();
+    }
+  });
 }
 
 function scrollToCurrent() {
