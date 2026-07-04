@@ -3,13 +3,13 @@
 // ===== Utilities =====
 function pad(n, w) { return String(Math.floor(n)).padStart(w, '0'); }
 
-function floor2(t) { return Math.floor(t * 100) / 100; }
+function floor2(t) { return Math.round(t * 100) / 100; }
 
 function timeToStr(t) {
   t = floor2(t);
   var m = Math.floor(t / 60);
   var s = Math.floor(t % 60);
-  var cs = Math.floor((t % 1) * 100);
+  var cs = Math.round((t % 1) * 100) % 100;
   return pad(m, 2) + ':' + pad(s, 2) + '.' + pad(cs, 2);
 }
 
@@ -27,7 +27,7 @@ function timeToSrt(t) {
   var h = Math.floor(t / 3600);
   var m = Math.floor((t % 3600) / 60);
   var s = Math.floor(t % 60);
-  var ms = Math.floor((t % 1) * 1000);
+  var ms = Math.round((t % 1) * 1000) % 1000;
   return pad(h, 2) + ':' + pad(m, 2) + ':' + pad(s, 2) + ',' + pad(ms, 3);
 }
 
@@ -47,6 +47,7 @@ var state = {
   title: '',
   artist: ''
 };
+var _appliedOffsetStep = 0;
 
 // ===== LRC Parser =====
 function parseLRC(text) {
@@ -304,8 +305,16 @@ function deleteLine(idx) {
 }
 
 function setOffset(valCS) {
-  state.offset = valCS * 0.05;
-  $('#offsetValue').text(state.offset.toFixed(2));
+  var delta = (valCS - _appliedOffsetStep) * 0.05;
+  if (delta !== 0) {
+    _appliedOffsetStep = valCS;
+    state.lines.forEach(function(line) {
+      line.start = floor2(Math.max(0, line.start + delta));
+    });
+    renderTable();
+    if (state.focusMode) renderFocus();
+  }
+  $('#offsetValue').text((valCS * 0.05).toFixed(2));
   onTimeUpdate();
 }
 
@@ -329,6 +338,7 @@ function loadLyricsFromLines(newLines) {
   state.lines = newLines;
   state.currentIdx = state.lines.length > 0 ? 0 : -1;
   state.offset = 0;
+  _appliedOffsetStep = 0;
   $('#offsetSlider').val(0);
   $('#offsetValue').text('0.00');
   if (state.focusMode) {
