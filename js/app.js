@@ -45,7 +45,10 @@ var state = {
   offset: 0,
   focusMode: false,
   title: '',
-  artist: ''
+  artist: '',
+  useCheckboxes: true,
+  selectedIndices: [],
+  batchMode: false
 };
 var _appliedOffsetStep = 0;
 
@@ -132,7 +135,12 @@ function renderTable() {
     var isReachable = i === 0 || line.start >= prefMax;
     if (line.start > prefMax) prefMax = line.start;
     var tr = $('<tr>').toggleClass('active', isActive).toggleClass('line-disabled', !isReachable).data('idx', i);
-    var dragTd = $('<td>').addClass('col-drag').append($('<span>').addClass('drag-handle').text('\u283f'));
+    var dragTd = $('<td>').addClass('col-drag');
+    if (state.useCheckboxes) {
+      dragTd.append($('<input>').attr('type', 'checkbox').addClass('row-checkbox').prop('checked', state.selectedIndices.indexOf(i) >= 0));
+    } else {
+      dragTd.append($('<span>').addClass('drag-handle').text('\u283f'));
+    }
     var indicator = $('<td>').addClass('col-indicator').text(isActive ? '\u25b6' : '');
     var timeStr = timeToStr(line.start);
     var timeTd = $('<td>').addClass('col-time');
@@ -148,13 +156,14 @@ function renderTable() {
   });
   updateLineCount();
   scrollToCurrent();
-  initSortable();
+  if (!state.useCheckboxes) initSortable();
 }
 
 var _sortable = null;
 
 function initSortable() {
   if (_sortable) _sortable.destroy();
+  if (state.useCheckboxes) return;
   var el = document.getElementById('tableBody');
   if (!el || el.children.length === 0) return;
   _sortable = new Sortable(el, {
@@ -167,6 +176,13 @@ function initSortable() {
       if (fromIdx === toIdx) return;
       var item = state.lines.splice(fromIdx, 1)[0];
       state.lines.splice(toIdx, 0, item);
+      if (state.currentIdx === fromIdx) {
+        state.currentIdx = toIdx;
+      } else if (state.currentIdx > fromIdx && state.currentIdx <= toIdx) {
+        state.currentIdx--;
+      } else if (state.currentIdx < fromIdx && state.currentIdx >= toIdx) {
+        state.currentIdx++;
+      }
       renderTable();
     }
   });
@@ -306,6 +322,13 @@ function deleteLine(idx) {
   } else {
     state.currentIdx = idx;
   }
+  renderTable();
+}
+
+function batchOffset(delta) {
+  state.selectedIndices.forEach(function(i) {
+    state.lines[i].start = round2(Math.max(0, state.lines[i].start + delta));
+  });
   renderTable();
 }
 
@@ -495,10 +518,61 @@ $(document).ready(function() {
 
   // Offset buttons
   $('#offsetDec').click(function() {
-    setOffset(Math.max(-200, _appliedOffsetStep - 1));
+    if (state.batchMode && state.selectedIndices.length > 0) {
+      batchOffset(-0.05);
+    } else {
+      setOffset(Math.max(-200, _appliedOffsetStep - 1));
+    }
   });
   $('#offsetInc').click(function() {
-    setOffset(Math.min(200, _appliedOffsetStep + 1));
+    if (state.batchMode && state.selectedIndices.length > 0) {
+      batchOffset(0.05);
+    } else {
+      setOffset(Math.min(200, _appliedOffsetStep + 1));
+    }
+  });
+
+  // Mode toggle
+  $('#modeToggle').click(function() {
+    state.useCheckboxes = !state.useCheckboxes;
+    if (!state.useCheckboxes) {
+      state.selectedIndices = [];
+      if (state.batchMode) {
+        state.batchMode = false;
+        $('#batchMenu [data-action="batch-offset"]').removeClass('active');
+        $('#offsetDec, #offsetInc').removeClass('btn-batch');
+      }
+    }
+    $(this).text(state.useCheckboxes ? '拖拽' : '多选');
+    renderTable();
+  });
+
+  // Batch dropdown
+  $('#batchMenu').on('click', '[data-action]', function() {
+    var action = $(this).data('action');
+    if (action === 'batch-offset') {
+      state.batchMode = !state.batchMode;
+      $(this).toggleClass('active', state.batchMode);
+      $('#offsetDec, #offsetInc').toggleClass('btn-batch', state.batchMode);
+    } else if (action === 'delete-selected') {
+      var indices = state.selectedIndices.slice().sort(function(a, b) { return b - a; });
+      if (indices.length === 0) return;
+      indices.forEach(function(i) { state.lines.splice(i, 1); });
+      state.selectedIndices = [];
+      state.currentIdx = -1;
+      if (state.batchMode) { state.batchMode = false; $('#batchMenu [data-action="batch-offset"]').removeClass('active'); $('#offsetDec, #offsetInc').removeClass('btn-batch'); }
+      renderTable();
+    }
+  });
+
+  // Row checkbox
+  $('#tableBody').on('change', '.row-checkbox', function() {
+    var idx = $(this).closest('tr').data('idx');
+    if ($(this).is(':checked')) {
+      if (state.selectedIndices.indexOf(idx) < 0) state.selectedIndices.push(idx);
+    } else {
+      state.selectedIndices = state.selectedIndices.filter(function(i) { return i !== idx; });
+    }
   });
 
   // Focus toggle

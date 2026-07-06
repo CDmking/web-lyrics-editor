@@ -68,9 +68,17 @@
             </div>
             <div class="col">
               <div class="d-flex align-items-center gap-2">
-                <span class="small text-nowrap">偏移: <span id="offsetValue">0.00</span>s</span>
+                <span class="small text-nowrap ms-3">偏移：</span>
                 <button class="btn btn-sm btn-outline-secondary btn-offset" id="offsetDec">&minus;</button>
                 <button class="btn btn-sm btn-outline-secondary btn-offset" id="offsetInc">+</button>
+                <button class="btn btn-sm btn-outline-secondary" id="modeToggle">拖拽</button>
+                <div class="dropdown d-inline-block">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" id="batchDropdown" data-bs-toggle="dropdown">批量操作</button>
+                  <ul class="dropdown-menu" id="batchMenu">
+                    <li><a class="dropdown-item" href="#" data-action="batch-offset">批量偏移</a></li>
+                    <li><a class="dropdown-item" href="#" data-action="delete-selected">删除选中</a></li>
+                  </ul>
+                </div>
               </div>
             </div>
             <div class="col-auto">
@@ -93,7 +101,7 @@
               <table class="table table-lyrics mb-0" id="lyricsHeaderTable">
                 <thead>
                     <tr>
-                      <th class="col-drag"></th>
+                      <th class="col-drag" id="headerDrag"></th>
                       <th class="col-indicator"></th>
                       <th class="col-time">时间</th>
                     <th class="col-lyric-header"><span class="col-lyric-header-inner">歌词 <button class="btn-head-add" id="headAddBtn" title="在第一行前添加">+</button></span></th>
