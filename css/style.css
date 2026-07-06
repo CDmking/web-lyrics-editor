@@ -56,7 +56,6 @@ html, body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  scroll-behavior: auto;
   scrollbar-width: thin;
 }
 
@@ -335,10 +334,6 @@ html, body {
   font-size: 1.3rem;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
-body.drag-over .drop-overlay {
-  display: flex;
-}
-
 /* === Offset Buttons === */
 .btn-offset {
   padding: 0 7px;

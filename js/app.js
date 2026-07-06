@@ -9,7 +9,7 @@ function timeToStr(t) {
   t = round2(t);
   var m = Math.floor(t / 60);
   var s = Math.floor(t % 60);
-  var cs = Math.round((t % 1) * 100) % 100;
+  var cs = Math.round((t % 1) * 100);
   return pad(m, 2) + ':' + pad(s, 2) + '.' + pad(cs, 2);
 }
 
@@ -27,7 +27,7 @@ function timeToSrt(t) {
   var h = Math.floor(t / 3600);
   var m = Math.floor((t % 3600) / 60);
   var s = Math.floor(t % 60);
-  var ms = Math.round((t % 1) * 1000) % 1000;
+  var ms = Math.round((t % 1) * 1000);
   return pad(h, 2) + ':' + pad(m, 2) + ':' + pad(s, 2) + ',' + pad(ms, 3);
 }
 
@@ -171,7 +171,6 @@ function initSortable() {
   _sortable = new Sortable(el, {
     handle: '.drag-handle',
     animation: 150,
-    easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
     onEnd: function(evt) {
       var fromIdx = evt.oldIndex;
       var toIdx = evt.newIndex;
@@ -232,6 +231,7 @@ function renderFocus() {
   $('#focusDec').prop('disabled', locked);
   $('#focusInc').prop('disabled', locked);
   $('#focusSnap').prop('disabled', locked);
+  $('#focusTime').prop('disabled', locked);
   var idxW = String(state.lines.length).length * 2 + 1;
   $('#focusIdx').text((state.currentIdx + 1) + ' / ' + state.lines.length).css('min-width', idxW + 'em');
   if (state.currentIdx > 0) {
@@ -639,6 +639,7 @@ $(document).ready(function() {
   // Focus: time input direct edit
   $('#focusTime').on('change', function() {
     if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) return;
+    if (state.lines[state.currentIdx].locked) return;
     var t = strToTime($(this).val());
     state.lines[state.currentIdx].start = round2(t);
     renderFocus();
