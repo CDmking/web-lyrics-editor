@@ -344,7 +344,6 @@ function loadLyricsFromLines(newLines) {
   state.currentIdx = state.lines.length > 0 ? 0 : -1;
   state.offset = 0;
   _appliedOffsetStep = 0;
-  $('#offsetSlider').val(0);
   $('#offsetValue').text('0.00');
   if (state.focusMode) {
     renderFocus();
@@ -494,21 +493,12 @@ $(document).ready(function() {
     $('#lyricsTextarea').val('');
   });
 
-  // Offset slider
-  $('#offsetSlider').on('input', function() {
-    setOffset(parseInt($(this).val(), 10));
-  });
+  // Offset buttons
   $('#offsetDec').click(function() {
-    var v = parseInt($('#offsetSlider').val(), 10) - 1;
-    if (v < -200) v = -200;
-    $('#offsetSlider').val(v);
-    setOffset(v);
+    setOffset(Math.max(-200, _appliedOffsetStep - 1));
   });
   $('#offsetInc').click(function() {
-    var v = parseInt($('#offsetSlider').val(), 10) + 1;
-    if (v > 200) v = 200;
-    $('#offsetSlider').val(v);
-    setOffset(v);
+    setOffset(Math.min(200, _appliedOffsetStep + 1));
   });
 
   // Focus toggle
