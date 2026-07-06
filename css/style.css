@@ -57,6 +57,7 @@ html, body {
   min-height: 0;
   overflow-y: auto;
   scroll-behavior: auto;
+  scrollbar-width: thin;
 }
 
 #tableContainer::-webkit-scrollbar {
@@ -259,6 +260,7 @@ html, body {
   padding: 1rem;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   min-height: 5.3rem;
   color: #212529;
 }

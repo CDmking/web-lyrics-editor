@@ -3,10 +3,10 @@
 // ===== Utilities =====
 function pad(n, w) { return String(Math.floor(n)).padStart(w, '0'); }
 
-function floor2(t) { return Math.round(t * 100) / 100; }
+function round2(t) { return Math.round(t * 100) / 100; }
 
 function timeToStr(t) {
-  t = floor2(t);
+  t = round2(t);
   var m = Math.floor(t / 60);
   var s = Math.floor(t % 60);
   var cs = Math.round((t % 1) * 100) % 100;
@@ -23,7 +23,7 @@ function strToTime(s) {
 }
 
 function timeToSrt(t) {
-  t = floor2(t);
+  t = round2(t);
   var h = Math.floor(t / 3600);
   var m = Math.floor((t % 3600) / 60);
   var s = Math.floor(t % 60);
@@ -96,7 +96,7 @@ function generateLRC() {
   if (state.title) lrc += '[ti:' + state.title + ']\n';
   if (state.artist) lrc += '[ar:' + state.artist + ']\n';
   state.lines.forEach(function(line) {
-    var adjusted = floor2(line.start + state.offset);
+    var adjusted = round2(line.start + state.offset);
     lrc += '[' + timeToStr(adjusted) + ']' + line.text + '\n';
   });
   return lrc;
@@ -105,10 +105,10 @@ function generateLRC() {
 function generateSRT() {
   var srt = '';
   state.lines.forEach(function(line, i) {
-    var start = floor2(line.start + state.offset);
+    var start = round2(line.start + state.offset);
     var end = i < state.lines.length - 1
-      ? floor2(state.lines[i + 1].start + state.offset)
-      : floor2(start + 5);
+      ? round2(state.lines[i + 1].start + state.offset)
+      : round2(start + 5);
     srt += (i + 1) + '\n';
     srt += timeToSrt(start) + ' --> ' + timeToSrt(end) + '\n';
     srt += line.text + '\n\n';
@@ -118,7 +118,7 @@ function generateSRT() {
 
 // ===== Rendering =====
 function renderTable() {
-  _scanStart = 0;
+
   var tbody = $('#tableBody').empty();
   if (state.lines.length === 0) {
     tbody.append('<tr><td colspan="4" class="text-center text-muted py-4">暂无歌词，请导入 LRC 或粘贴歌词文本</td></tr>');
@@ -180,7 +180,7 @@ function scrollToCurrent() {
 
 function updateHighlight() {
   var idx = state.currentIdx;
-  _scanStart = Math.max(0, idx);
+
   $('#tableBody tr.active').removeClass('active').find('.col-indicator').text('');
   if (idx >= 0) {
     var row = $('#tableBody tr').eq(idx);
@@ -222,17 +222,6 @@ function renderFocus() {
   } else {
     $('#focusNextLine').text('(\u65e0)').parent().show();
   }
-  fitFocusText();
-}
-
-function fitFocusText() {
-  var el = document.getElementById('focusLyric');
-  if (!el || !el.textContent) return;
-  el.style.fontSize = '2.2rem';
-  var w = el.clientWidth;
-  while (el.scrollWidth > w && parseFloat(el.style.fontSize) > 0.8) {
-    el.style.fontSize = (parseFloat(el.style.fontSize) - 0.1) + 'rem';
-  }
 }
 
 function updateTimeDisplay() {
@@ -247,8 +236,6 @@ function updateTimeDisplay() {
 }
 
 // ===== Audio Sync =====
-var _scanStart = 0;
-
 function onTimeUpdate() {
   updateTimeDisplay();
   var audio = state.audio;
@@ -256,18 +243,10 @@ function onTimeUpdate() {
   var adj = audio.currentTime - state.offset;
   var lines = state.lines;
   var idx = -1;
-  if (_scanStart > 0 && adj >= lines[_scanStart - 1].start) {
-    for (var i = _scanStart; i < lines.length; i++) {
-      if (lines[i].start <= adj) idx = i;
-      else break;
-    }
-  } else {
-    for (var i = 0; i < lines.length; i++) {
-      if (lines[i].start <= adj) idx = i;
-      else break;
-    }
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].start <= adj) idx = i;
+    else break;
   }
-  if (idx >= 0) _scanStart = idx;
   if (idx !== state.currentIdx) {
     state.currentIdx = idx;
     updateHighlight();
@@ -290,13 +269,13 @@ function snapTime() {
   if (idx < 0 || idx >= state.lines.length) return;
   var audio = state.audio;
   if (!audio || !audio.src) return;
-  state.lines[idx].start = floor2(Math.max(0, audio.currentTime - state.offset));
+  state.lines[idx].start = round2(Math.max(0, audio.currentTime - state.offset));
   renderTable();
 }
 
 function adjustTime(idx, delta) {
   if (idx < 0 || idx >= state.lines.length) return;
-  state.lines[idx].start = floor2(Math.max(0, state.lines[idx].start + delta));
+  state.lines[idx].start = round2(Math.max(0, state.lines[idx].start + delta));
   renderTable();
 }
 
@@ -304,7 +283,7 @@ function addLineAt(idx) {
   var start = 0;
   var audio = state.audio;
   if (audio && audio.src && isFinite(audio.currentTime)) {
-    start = floor2(Math.max(0, audio.currentTime - state.offset));
+    start = round2(Math.max(0, audio.currentTime - state.offset));
   } else if (idx > 0 && idx <= state.lines.length && state.lines.length > 0) {
     start = state.lines[idx - 1].start + 1;
   } else if (state.lines.length > 0) {
@@ -335,7 +314,7 @@ function setOffset(valCS) {
   if (delta !== 0) {
     _appliedOffsetStep = valCS;
     state.lines.forEach(function(line) {
-      line.start = floor2(Math.max(0, line.start + delta));
+      line.start = round2(Math.max(0, line.start + delta));
     });
     renderTable();
     if (state.focusMode) renderFocus();
@@ -562,7 +541,7 @@ $(document).ready(function() {
   $('#tableBody').on('change', '.time-edit-input', function() {
     var idx = $(this).closest('tr').data('idx');
     var newTime = strToTime($(this).val());
-    state.lines[idx].start = floor2(newTime);
+    state.lines[idx].start = round2(newTime);
     renderTable();
   });
 
@@ -583,7 +562,7 @@ $(document).ready(function() {
   $('#focusTime').on('change', function() {
     if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) return;
     var t = strToTime($(this).val());
-    state.lines[state.currentIdx].start = floor2(t);
+    state.lines[state.currentIdx].start = round2(t);
     renderFocus();
   });
 
