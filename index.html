@@ -68,7 +68,7 @@
             </div>
             <div class="col">
               <div class="d-flex align-items-center gap-2">
-                <span class="small text-nowrap ms-3">偏移：</span>
+                <span class="small text-nowrap ms-3" id="offsetLabel">全局偏移：</span>
                 <button class="btn btn-sm btn-outline-secondary btn-offset" id="offsetDec">&minus;</button>
                 <button class="btn btn-sm btn-outline-secondary btn-offset" id="offsetInc">+</button>
                 <button class="btn btn-sm btn-outline-secondary" id="modeToggle">拖拽</button>
@@ -77,6 +77,7 @@
                   <ul class="dropdown-menu" id="batchMenu">
                     <li><a class="dropdown-item" href="#" data-action="batch-offset">批量偏移</a></li>
                     <li><a class="dropdown-item" href="#" data-action="delete-selected">删除选中</a></li>
+                    <li><a class="dropdown-item" href="#" data-action="toggle-lock">锁定时间戳</a></li>
                   </ul>
                 </div>
               </div>

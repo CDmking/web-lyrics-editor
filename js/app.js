@@ -72,7 +72,7 @@ function parseLRC(text) {
       remaining = remaining.slice(match[0].length);
     }
     if (times.length > 0) {
-      lines.push({ start: times[0], text: remaining.trim() || '' });
+      lines.push({ start: times[0], text: remaining.trim() || '', locked: false });
       return;
     }
     var ti = line.match(/^\[ti:(.*)\]/i);
@@ -144,9 +144,11 @@ function renderTable() {
     var indicator = $('<td>').addClass('col-indicator').text(isActive ? '\u25b6' : '');
     var timeStr = timeToStr(line.start);
     var timeTd = $('<td>').addClass('col-time');
-    timeTd.append($('<input>').addClass('form-control form-control-sm time-edit-input').val(timeStr));
-    timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'dec').html('&minus;'));
-    timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'inc').text('+'));
+    var locked = line.locked;
+    timeTd.toggleClass('time-locked', locked);
+    timeTd.append($('<input>').addClass('form-control form-control-sm time-edit-input').val(timeStr).prop('disabled', locked));
+    timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'dec').html('&minus;').prop('disabled', locked));
+    timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'inc').text('+').prop('disabled', locked));
     var lyricTd = $('<td>').addClass('col-lyric');
     lyricTd.append($('<input>').addClass('form-control form-control-sm lyric-input').val(line.text));
     lyricTd.append($('<button>').addClass('btn-row-add').attr('title', '\u5728\u540e\u6dfb\u52a0').text('+'));
@@ -224,8 +226,12 @@ function renderFocus() {
     return;
   }
   var line = state.lines[state.currentIdx];
+  var locked = line.locked;
   $('#focusLyric').text(line.text);
   $('#focusTime').val(timeToStr(line.start));
+  $('#focusDec').prop('disabled', locked);
+  $('#focusInc').prop('disabled', locked);
+  $('#focusSnap').prop('disabled', locked);
   var idxW = String(state.lines.length).length * 2 + 1;
   $('#focusIdx').text((state.currentIdx + 1) + ' / ' + state.lines.length).css('min-width', idxW + 'em');
   if (state.currentIdx > 0) {
@@ -283,6 +289,7 @@ function setCurrentLine(idx) {
 function snapTime() {
   var idx = state.currentIdx;
   if (idx < 0 || idx >= state.lines.length) return;
+  if (state.lines[idx].locked) return;
   var audio = state.audio;
   if (!audio || !audio.src) return;
   state.lines[idx].start = round2(Math.max(0, audio.currentTime - state.offset));
@@ -291,6 +298,7 @@ function snapTime() {
 
 function adjustTime(idx, delta) {
   if (idx < 0 || idx >= state.lines.length) return;
+  if (state.lines[idx].locked) return;
   state.lines[idx].start = round2(Math.max(0, state.lines[idx].start + delta));
   renderTable();
 }
@@ -305,7 +313,7 @@ function addLineAt(idx) {
   } else if (state.lines.length > 0) {
     start = state.lines[0].start;
   }
-  state.lines.splice(idx, 0, { start: start, text: '' });
+  state.lines.splice(idx, 0, { start: start, text: '', locked: false });
   state.currentIdx = idx;
   renderTable();
   var row = $('#tableBody tr').eq(idx);
@@ -327,6 +335,7 @@ function deleteLine(idx) {
 
 function batchOffset(delta) {
   state.selectedIndices.forEach(function(i) {
+    if (state.lines[i].locked) return;
     state.lines[i].start = round2(Math.max(0, state.lines[i].start + delta));
   });
   renderTable();
@@ -337,12 +346,12 @@ function setOffset(valCS) {
   if (delta !== 0) {
     _appliedOffsetStep = valCS;
     state.lines.forEach(function(line) {
+      if (line.locked) return;
       line.start = round2(Math.max(0, line.start + delta));
     });
     renderTable();
     if (state.focusMode) renderFocus();
   }
-  $('#offsetValue').text((valCS * 0.05).toFixed(2));
   onTimeUpdate();
 }
 
@@ -367,7 +376,6 @@ function loadLyricsFromLines(newLines) {
   state.currentIdx = state.lines.length > 0 ? 0 : -1;
   state.offset = 0;
   _appliedOffsetStep = 0;
-  $('#offsetValue').text('0.00');
   if (state.focusMode) {
     renderFocus();
   } else {
@@ -541,6 +549,7 @@ $(document).ready(function() {
         state.batchMode = false;
         $('#batchMenu [data-action="batch-offset"]').removeClass('active');
         $('#offsetDec, #offsetInc').removeClass('btn-batch');
+        $('#offsetLabel').text('全局偏移：');
       }
     }
     $(this).text(state.useCheckboxes ? '拖拽' : '多选');
@@ -554,13 +563,18 @@ $(document).ready(function() {
       state.batchMode = !state.batchMode;
       $(this).toggleClass('active', state.batchMode);
       $('#offsetDec, #offsetInc').toggleClass('btn-batch', state.batchMode);
+      $('#offsetLabel').text(state.batchMode ? '批量偏移：' : '全局偏移：');
+    } else if (action === 'toggle-lock') {
+      state.selectedIndices.forEach(function(i) { state.lines[i].locked = !state.lines[i].locked; });
+      state.selectedIndices = [];
+      renderTable();
     } else if (action === 'delete-selected') {
       var indices = state.selectedIndices.slice().sort(function(a, b) { return b - a; });
       if (indices.length === 0) return;
       indices.forEach(function(i) { state.lines.splice(i, 1); });
       state.selectedIndices = [];
       state.currentIdx = -1;
-      if (state.batchMode) { state.batchMode = false; $('#batchMenu [data-action="batch-offset"]').removeClass('active'); $('#offsetDec, #offsetInc').removeClass('btn-batch'); }
+      if (state.batchMode) { state.batchMode = false; $('#batchMenu [data-action="batch-offset"]').removeClass('active'); $('#offsetDec, #offsetInc').removeClass('btn-batch'); $('#offsetLabel').text('全局偏移：'); }
       renderTable();
     }
   });

@@ -367,3 +367,8 @@ body.drag-over .drop-overlay {
   background: #cce5ff;
   border-color: #86b7fe;
 }
+
+.time-locked {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
