@@ -35,6 +35,25 @@ function filenameBase(name) {
   return name.replace(/\.[^.]+$/, '');
 }
 
+// ===== Helpers =====
+var $id = document.getElementById.bind(document);
+var $q = document.querySelector.bind(document);
+var $qa = document.querySelectorAll.bind(document);
+
+function el(tag) { return document.createElement(tag); }
+
+function attr(el, name, val) { el.setAttribute(name, val); return el; }
+
+function cls(el) {
+  for (var i = 1; i < arguments.length; i++) el.classList.add(arguments[i]);
+  return el;
+}
+
+function append(parent) {
+  for (var i = 1; i < arguments.length; i++) parent.appendChild(arguments[i]);
+  return parent;
+}
+
 // ===== State =====
 var state = {
   audio: null,
@@ -43,6 +62,7 @@ var state = {
   lines: [],
   currentIdx: -1,
   offset: 0,
+  appliedOffsetStep: 0,
   focusMode: false,
   title: '',
   artist: '',
@@ -50,7 +70,6 @@ var state = {
   selectedIndices: [],
   batchMode: false
 };
-var _appliedOffsetStep = 0;
 
 // ===== LRC Parser =====
 function parseLRC(text) {
@@ -121,10 +140,15 @@ function generateSRT() {
 
 // ===== Rendering =====
 function renderTable() {
-
-  var tbody = $('#tableBody').empty();
+  var tbody = $id('tableBody');
+  tbody.innerHTML = '';
   if (state.lines.length === 0) {
-    tbody.append('<tr><td colspan="4" class="text-center text-muted py-4">暂无歌词，请导入 LRC 或粘贴歌词文本</td></tr>');
+    var row = el('tr');
+    var td = append(el('td'), document.createTextNode('\u6682\u65e0\u6b4c\u8bcd\uff0c\u8bf7\u5bfc\u5165 LRC \u6216\u7c98\u8d34\u6b4c\u8bcd\u6587\u672c'));
+    td.className = 'text-center text-muted py-4';
+    td.colSpan = 4;
+    row.appendChild(td);
+    tbody.appendChild(row);
     updateLineCount();
     return;
   }
@@ -134,27 +158,67 @@ function renderTable() {
     var isActive = (i === state.currentIdx);
     var isReachable = i === 0 || line.start >= prefMax;
     if (line.start > prefMax) prefMax = line.start;
-    var tr = $('<tr>').toggleClass('active', isActive).toggleClass('line-disabled', !isReachable).data('idx', i);
-    var dragTd = $('<td>').addClass('col-drag');
+    var tr = el('tr');
+    if (isActive) tr.classList.add('active');
+    if (!isReachable) tr.classList.add('line-disabled');
+    tr.dataset.idx = i;
+
+    var dragTd = cls(el('td'), 'col-drag');
     if (state.useCheckboxes) {
-      dragTd.append($('<input>').attr('type', 'checkbox').addClass('row-checkbox').prop('checked', state.selectedIndices.indexOf(i) >= 0));
+      var cb = el('input');
+      cb.type = 'checkbox';
+      cb.className = 'row-checkbox';
+      if (state.selectedIndices.indexOf(i) >= 0) cb.checked = true;
+      dragTd.appendChild(cb);
     } else {
-      dragTd.append($('<span>').addClass('drag-handle').text('\u283f'));
+      var handle = el('span');
+      handle.className = 'drag-handle';
+      handle.textContent = '\u283f';
+      dragTd.appendChild(handle);
     }
-    var indicator = $('<td>').addClass('col-indicator').text(isActive ? '\u25b6' : '');
+
+    var indicator = cls(el('td'), 'col-indicator');
+    indicator.textContent = isActive ? '\u25b6' : '';
+
     var timeStr = timeToStr(line.start);
-    var timeTd = $('<td>').addClass('col-time');
-    var locked = line.locked;
-    timeTd.toggleClass('time-locked', locked);
-    timeTd.append($('<input>').addClass('form-control form-control-sm time-edit-input').val(timeStr).prop('disabled', locked));
-    timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'dec').html('&minus;').prop('disabled', locked));
-    timeTd.append($('<button>').addClass('btn btn-sm btn-outline-secondary btn-time').attr('data-action', 'inc').text('+').prop('disabled', locked));
-    var lyricTd = $('<td>').addClass('col-lyric');
-    lyricTd.append($('<input>').addClass('form-control form-control-sm lyric-input').val(line.text));
-    lyricTd.append($('<button>').addClass('btn-row-add').attr('title', '\u5728\u540e\u6dfb\u52a0').text('+'));
-    lyricTd.append($('<button>').addClass('btn-row-del').attr('title', '\u5220\u9664\u6b64\u884c').html('&times;'));
-    tr.append(dragTd, indicator, timeTd, lyricTd);
-    tbody.append(tr);
+    var timeTd = cls(el('td'), 'col-time');
+    if (line.locked) timeTd.classList.add('time-locked');
+    var timeInput = el('input');
+    timeInput.className = 'form-control form-control-sm time-edit-input';
+    timeInput.value = timeStr;
+    timeInput.disabled = line.locked;
+    timeTd.appendChild(timeInput);
+    var decBtn = el('button');
+    decBtn.className = 'btn btn-sm btn-outline-secondary btn-time';
+    decBtn.setAttribute('data-action', 'dec');
+    decBtn.innerHTML = '&minus;';
+    decBtn.disabled = line.locked;
+    timeTd.appendChild(decBtn);
+    var incBtn = el('button');
+    incBtn.className = 'btn btn-sm btn-outline-secondary btn-time';
+    incBtn.setAttribute('data-action', 'inc');
+    incBtn.textContent = '+';
+    incBtn.disabled = line.locked;
+    timeTd.appendChild(incBtn);
+
+    var lyricTd = cls(el('td'), 'col-lyric');
+    var lyricInput = el('input');
+    lyricInput.className = 'form-control form-control-sm lyric-input';
+    lyricInput.value = line.text;
+    lyricTd.appendChild(lyricInput);
+    var addBtn = el('button');
+    addBtn.className = 'btn-row-add';
+    addBtn.title = '\u5728\u540e\u6dfb\u52a0';
+    addBtn.textContent = '+';
+    lyricTd.appendChild(addBtn);
+    var delBtn = el('button');
+    delBtn.className = 'btn-row-del';
+    delBtn.title = '\u5220\u9664\u6b64\u884c';
+    delBtn.innerHTML = '&times;';
+    lyricTd.appendChild(delBtn);
+
+    append(tr, dragTd, indicator, timeTd, lyricTd);
+    tbody.appendChild(tr);
   });
   updateLineCount();
   scrollToCurrent();
@@ -166,7 +230,7 @@ var _sortable = null;
 function initSortable() {
   if (_sortable) _sortable.destroy();
   if (state.useCheckboxes) return;
-  var el = document.getElementById('tableBody');
+  var el = $id('tableBody');
   if (!el || el.children.length === 0) return;
   _sortable = new Sortable(el, {
     handle: '.drag-handle',
@@ -191,18 +255,25 @@ function initSortable() {
 
 function scrollToCurrent() {
   if (state.lines.length === 0) return;
-  var row = $('#tableBody tr.active');
-  if (row.length) row[0].scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  var row = $q('#tableBody tr.active');
+  if (row) row.scrollIntoView({ block: 'nearest', behavior: 'instant' });
 }
 
 function updateHighlight() {
   var idx = state.currentIdx;
-
-  $('#tableBody tr.active').removeClass('active').find('.col-indicator').text('');
+  var active = $q('#tableBody tr.active');
+  if (active) {
+    active.classList.remove('active');
+    var ind = active.querySelector('.col-indicator');
+    if (ind) ind.textContent = '';
+  }
   if (idx >= 0) {
-    var row = $('#tableBody tr').eq(idx);
-    row.addClass('active');
-    row.find('.col-indicator').text('\u25b6');
+    var row = $qa('#tableBody tr')[idx];
+    if (row) {
+      row.classList.add('active');
+      var ind = row.querySelector('.col-indicator');
+      if (ind) ind.textContent = '\u25b6';
+    }
   }
   if (state.focusMode) renderFocus();
   scrollToCurrent();
@@ -212,49 +283,57 @@ function updateHighlight() {
 function updateLineCount() {
   var s = state.lines.length + ' \u53e5';
   if (state.currentIdx >= 0) s += ' \uff08\u5f53\u524d: ' + (state.currentIdx + 1) + '\uff09';
-  $('#lineCount').text(s);
+  $id('lineCount').textContent = s;
 }
 
 function renderFocus() {
   if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) {
-    $('#focusLyric').text('\u2014').css('fontSize', '2.2rem');
-    $('#focusTime').val('00:00.00');
-    $('#focusIdx').text('- / -');
-    $('#focusPrevLine').text('').parent().hide();
-    $('#focusNextLine').text('').parent().hide();
+    $id('focusLyric').textContent = '\u2014';
+    $id('focusLyric').style.fontSize = '2.2rem';
+    $id('focusTime').value = '00:00.00';
+    $id('focusIdx').textContent = '- / -';
+    $id('focusPrevLine').textContent = '';
+    $id('focusPrevLine').parentElement.style.display = 'none';
+    $id('focusNextLine').textContent = '';
+    $id('focusNextLine').parentElement.style.display = 'none';
     return;
   }
   var line = state.lines[state.currentIdx];
   var locked = line.locked;
-  $('#focusLyric').text(line.text);
-  $('#focusTime').val(timeToStr(line.start));
-  $('#focusDec').prop('disabled', locked);
-  $('#focusInc').prop('disabled', locked);
-  $('#focusSnap').prop('disabled', locked);
-  $('#focusTime').prop('disabled', locked);
+  $id('focusLyric').textContent = line.text;
+  $id('focusTime').value = timeToStr(line.start);
+  $id('focusDec').disabled = locked;
+  $id('focusInc').disabled = locked;
+  $id('focusSnap').disabled = locked;
+  $id('focusTime').disabled = locked;
   var idxW = String(state.lines.length).length * 2 + 1;
-  $('#focusIdx').text((state.currentIdx + 1) + ' / ' + state.lines.length).css('min-width', idxW + 'em');
+  $id('focusIdx').textContent = (state.currentIdx + 1) + ' / ' + state.lines.length;
+  $id('focusIdx').style.minWidth = idxW + 'em';
   if (state.currentIdx > 0) {
-    $('#focusPrevLine').text(state.lines[state.currentIdx - 1].text).parent().show();
+    $id('focusPrevLine').textContent = state.lines[state.currentIdx - 1].text;
+    $id('focusPrevLine').parentElement.style.display = '';
   } else {
-    $('#focusPrevLine').text('(\u65e0)').parent().show();
+    $id('focusPrevLine').textContent = '(\u65e0)';
+    $id('focusPrevLine').parentElement.style.display = '';
   }
   if (state.currentIdx < state.lines.length - 1) {
-    $('#focusNextLine').text(state.lines[state.currentIdx + 1].text).parent().show();
+    $id('focusNextLine').textContent = state.lines[state.currentIdx + 1].text;
+    $id('focusNextLine').parentElement.style.display = '';
   } else {
-    $('#focusNextLine').text('(\u65e0)').parent().show();
+    $id('focusNextLine').textContent = '(\u65e0)';
+    $id('focusNextLine').parentElement.style.display = '';
   }
 }
 
 function updateTimeDisplay() {
   var audio = state.audio;
   if (!audio || !audio.src) {
-    $('#timeDisplay').text('00:00.00 / 00:00.00');
+    $id('timeDisplay').textContent = '00:00.00 / 00:00.00';
     return;
   }
   var cur = audio.currentTime || 0;
   var dur = audio.duration || 0;
-  $('#timeDisplay').text(timeToStr(cur) + ' / ' + timeToStr(dur));
+  $id('timeDisplay').textContent = timeToStr(cur) + ' / ' + timeToStr(dur);
 }
 
 // ===== Audio Sync =====
@@ -316,8 +395,8 @@ function addLineAt(idx) {
   state.lines.splice(idx, 0, { start: start, text: '', locked: false });
   state.currentIdx = idx;
   renderTable();
-  var row = $('#tableBody tr').eq(idx);
-  if (row.length) row.find('.lyric-input').focus();
+  var rows = $qa('#tableBody tr');
+  if (rows[idx]) rows[idx].querySelector('.lyric-input').focus();
 }
 
 function deleteLine(idx) {
@@ -342,9 +421,9 @@ function batchOffset(delta) {
 }
 
 function setOffset(valCS) {
-  var delta = (valCS - _appliedOffsetStep) * 0.05;
+  var delta = (valCS - state.appliedOffsetStep) * 0.05;
   if (delta !== 0) {
-    _appliedOffsetStep = valCS;
+    state.appliedOffsetStep = valCS;
     state.lines.forEach(function(line) {
       if (line.locked) return;
       line.start = round2(Math.max(0, line.start + delta));
@@ -358,14 +437,14 @@ function setOffset(valCS) {
 function toggleFocus() {
   state.focusMode = !state.focusMode;
   if (state.focusMode) {
-    $('#tableView').addClass('d-none');
-    $('#focusView').removeClass('d-none');
-    $('#focusToggle').text('\u9000\u51fa\u4e13\u6ce8');
+    $id('tableView').classList.add('d-none');
+    $id('focusView').classList.remove('d-none');
+    $id('focusToggle').textContent = '\u9000\u51fa\u4e13\u6ce8';
     renderFocus();
   } else {
-    $('#tableView').removeClass('d-none');
-    $('#focusView').addClass('d-none');
-    $('#focusToggle').text('\u4e13\u6ce8');
+    $id('tableView').classList.remove('d-none');
+    $id('focusView').classList.add('d-none');
+    $id('focusToggle').textContent = '\u4e13\u6ce8';
     renderTable();
   }
 }
@@ -375,7 +454,7 @@ function loadLyricsFromLines(newLines) {
   state.lines = newLines;
   state.currentIdx = state.lines.length > 0 ? 0 : -1;
   state.offset = 0;
-  _appliedOffsetStep = 0;
+  state.appliedOffsetStep = 0;
   if (state.focusMode) {
     renderFocus();
   } else {
@@ -385,8 +464,8 @@ function loadLyricsFromLines(newLines) {
 }
 
 function syncMetadata() {
-  if (state.title) $('#titleInput').val(state.title);
-  if (state.artist) $('#artistInput').val(state.artist);
+  if (state.title) $id('titleInput').value = state.title;
+  if (state.artist) $id('artistInput').value = state.artist;
 }
 
 // ===== Export =====
@@ -419,7 +498,7 @@ function onAudioFile(file) {
   if (state.audioUrl) URL.revokeObjectURL(state.audioUrl);
   state.audioUrl = URL.createObjectURL(file);
   state.audioName = file.name;
-  $('#audioName').text(file.name);
+  $id('audioName').textContent = file.name;
   state.audio.src = state.audioUrl;
   state.audio.load();
 }
@@ -485,16 +564,17 @@ function onKeyDown(e) {
 }
 
 // ===== Init =====
-$(document).ready(function() {
-  state.audio = document.getElementById('audioPlayer');
-  var pasteModal = new bootstrap.Modal('#pasteModal');
+(function() {
+  state.audio = $id('audioPlayer');
+  var pasteModalEl = $id('pasteModal');
+  var pasteModal = new bootstrap.Modal(pasteModalEl);
 
   // Audio events
   state.audio.addEventListener('loadedmetadata', function() {
     updateTimeDisplay();
   });
 
-  // rAF sync loop (~60fps, auto-pauses when tab hidden)
+  // rAF sync loop
   function syncLoop() {
     onTimeUpdate();
     requestAnimationFrame(syncLoop);
@@ -502,68 +582,72 @@ $(document).ready(function() {
   requestAnimationFrame(syncLoop);
 
   // Upload audio
-  $('#audioInput').change(function() {
+  $id('audioInput').addEventListener('change', function() {
     if (this.files && this.files[0]) onAudioFile(this.files[0]);
   });
 
   // Upload LRC
-  $('#lrcInput').change(function() {
+  $id('lrcInput').addEventListener('change', function() {
     if (this.files && this.files[0]) onLRCFile(this.files[0]);
   });
 
   // Paste lyrics
-  $('#confirmPaste').click(function() {
-    var text = $('#lyricsTextarea').val();
+  $id('confirmPaste').addEventListener('click', function() {
+    var text = $id('lyricsTextarea').value;
     if (text.trim()) {
       onLyricsText(text);
       pasteModal.hide();
-      $('#lyricsTextarea').val('');
+      $id('lyricsTextarea').value = '';
     }
   });
-  $('#pasteModal').on('hidden.bs.modal', function() {
-    $('#lyricsTextarea').val('');
+  pasteModalEl.addEventListener('hidden.bs.modal', function() {
+    $id('lyricsTextarea').value = '';
   });
 
   // Offset buttons
-  $('#offsetDec').click(function() {
+  $id('offsetDec').addEventListener('click', function() {
     if (state.batchMode && state.selectedIndices.length > 0) {
       batchOffset(-0.05);
     } else {
-      setOffset(Math.max(-200, _appliedOffsetStep - 1));
+      setOffset(Math.max(-200, state.appliedOffsetStep - 1));
     }
   });
-  $('#offsetInc').click(function() {
+  $id('offsetInc').addEventListener('click', function() {
     if (state.batchMode && state.selectedIndices.length > 0) {
       batchOffset(0.05);
     } else {
-      setOffset(Math.min(200, _appliedOffsetStep + 1));
+      setOffset(Math.min(200, state.appliedOffsetStep + 1));
     }
   });
 
   // Mode toggle
-  $('#modeToggle').click(function() {
+  $id('modeToggle').addEventListener('click', function() {
     state.useCheckboxes = !state.useCheckboxes;
     if (!state.useCheckboxes) {
       state.selectedIndices = [];
       if (state.batchMode) {
         state.batchMode = false;
-        $('#batchMenu [data-action="batch-offset"]').removeClass('active');
-        $('#offsetDec, #offsetInc').removeClass('btn-batch');
-        $('#offsetLabel').text('全局偏移：');
+        $q('#batchMenu [data-action="batch-offset"]').classList.remove('active');
+        $id('offsetDec').classList.remove('btn-batch');
+        $id('offsetInc').classList.remove('btn-batch');
+        $id('offsetLabel').textContent = '\u5168\u5c40\u504f\u79fb\uff1a';
       }
     }
-    $(this).text(state.useCheckboxes ? '拖拽' : '多选');
+    this.textContent = state.useCheckboxes ? '\u62d6\u62fd' : '\u591a\u9009';
     renderTable();
   });
 
   // Batch dropdown
-  $('#batchMenu').on('click', '[data-action]', function() {
-    var action = $(this).data('action');
+  $id('batchMenu').addEventListener('click', function(e) {
+    var item = e.target.closest('[data-action]');
+    if (!item) return;
+    var action = item.dataset.action;
     if (action === 'batch-offset') {
       state.batchMode = !state.batchMode;
-      $(this).toggleClass('active', state.batchMode);
-      $('#offsetDec, #offsetInc').toggleClass('btn-batch', state.batchMode);
-      $('#offsetLabel').text(state.batchMode ? '批量偏移：' : '全局偏移：');
+      item.classList.toggle('active', state.batchMode);
+      $id('offsetDec').classList.toggle('btn-batch', state.batchMode);
+      $id('offsetInc').classList.toggle('btn-batch', state.batchMode);
+      $id('offsetLabel').textContent = state.batchMode ? '\u6279\u91cf\u504f\u79fb\uff1a' : '\u5168\u5c40\u504f\u79fb\uff1a';
     } else if (action === 'toggle-lock') {
       state.selectedIndices.forEach(function(i) { state.lines[i].locked = !state.lines[i].locked; });
       state.selectedIndices = [];
@@ -574,15 +658,23 @@ $(document).ready(function() {
       indices.forEach(function(i) { state.lines.splice(i, 1); });
       state.selectedIndices = [];
       state.currentIdx = -1;
-      if (state.batchMode) { state.batchMode = false; $('#batchMenu [data-action="batch-offset"]').removeClass('active'); $('#offsetDec, #offsetInc').removeClass('btn-batch'); $('#offsetLabel').text('全局偏移：'); }
+      if (state.batchMode) {
+        state.batchMode = false;
+        $q('#batchMenu [data-action="batch-offset"]').classList.remove('active');
+        $id('offsetDec').classList.remove('btn-batch');
+        $id('offsetInc').classList.remove('btn-batch');
+        $id('offsetLabel').textContent = '\u5168\u5c40\u504f\u79fb\uff1a';
+      }
       renderTable();
     }
   });
 
   // Row checkbox
-  $('#tableBody').on('change', '.row-checkbox', function() {
-    var idx = $(this).closest('tr').data('idx');
-    if ($(this).is(':checked')) {
+  $id('tableBody').addEventListener('change', function(e) {
+    var cb = e.target.closest('.row-checkbox');
+    if (!cb) return;
+    var idx = parseInt(cb.closest('tr').dataset.idx, 10);
+    if (cb.checked) {
       if (state.selectedIndices.indexOf(idx) < 0) state.selectedIndices.push(idx);
     } else {
       state.selectedIndices = state.selectedIndices.filter(function(i) { return i !== idx; });
@@ -590,88 +682,106 @@ $(document).ready(function() {
   });
 
   // Focus toggle
-  $('#focusToggle').click(toggleFocus);
+  $id('focusToggle').addEventListener('click', toggleFocus);
 
   // Table: row click (seek)
-  $('#tableBody').on('click', 'tr', function(e) {
-    if ($(e.target).is('button, input, .btn-time')) return;
-    var idx = $(this).data('idx');
-    if (idx !== undefined) setCurrentLine(idx);
+  $id('tableBody').addEventListener('click', function(e) {
+    if (e.target.closest('button, input, .btn-time')) return;
+    var tr = e.target.closest('tr');
+    if (!tr) return;
+    var idx = parseInt(tr.dataset.idx, 10);
+    if (!isNaN(idx)) setCurrentLine(idx);
   });
 
   // Table: time adjust buttons
-  $('#tableBody').on('click', '[data-action="dec"]', function() {
-    var idx = $(this).closest('tr').data('idx');
-    adjustTime(idx, -0.05);
+  $id('tableBody').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action="dec"]');
+    if (btn) {
+      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
+      adjustTime(idx, -0.05);
+    }
   });
-  $('#tableBody').on('click', '[data-action="inc"]', function() {
-    var idx = $(this).closest('tr').data('idx');
-    adjustTime(idx, 0.05);
+  $id('tableBody').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action="inc"]');
+    if (btn) {
+      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
+      adjustTime(idx, 0.05);
+    }
   });
 
   // Table: lyric text change
-  $('#tableBody').on('change', '.lyric-input', function() {
-    var idx = $(this).closest('tr').data('idx');
-    if (idx !== undefined) state.lines[idx].text = $(this).val();
+  $id('tableBody').addEventListener('change', function(e) {
+    var input = e.target.closest('.lyric-input');
+    if (!input) return;
+    var idx = parseInt(input.closest('tr').dataset.idx, 10);
+    if (!isNaN(idx)) state.lines[idx].text = input.value;
   });
 
   // Table: time input change
-  $('#tableBody').on('change', '.time-edit-input', function() {
-    var idx = $(this).closest('tr').data('idx');
-    var newTime = strToTime($(this).val());
+  $id('tableBody').addEventListener('change', function(e) {
+    var input = e.target.closest('.time-edit-input');
+    if (!input) return;
+    var idx = parseInt(input.closest('tr').dataset.idx, 10);
+    var newTime = strToTime(input.value);
     state.lines[idx].start = round2(newTime);
     renderTable();
   });
 
   // Table: add / delete row buttons
-  $('#tableBody').on('click', '.btn-row-add', function() {
-    var idx = $(this).closest('tr').data('idx');
-    addLineAt(idx + 1);
+  $id('tableBody').addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-row-add');
+    if (btn) {
+      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
+      addLineAt(idx + 1);
+    }
   });
-  $('#tableBody').on('click', '.btn-row-del', function() {
-    var idx = $(this).closest('tr').data('idx');
-    deleteLine(idx);
+  $id('tableBody').addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-row-del');
+    if (btn) {
+      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
+      deleteLine(idx);
+    }
   });
-  $('#headAddBtn').click(function() {
+  $id('headAddBtn').addEventListener('click', function() {
     addLineAt(0);
   });
 
   // Focus: time input direct edit
-  $('#focusTime').on('change', function() {
+  $id('focusTime').addEventListener('change', function() {
     if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) return;
     if (state.lines[state.currentIdx].locked) return;
-    var t = strToTime($(this).val());
+    var t = strToTime(this.value);
     state.lines[state.currentIdx].start = round2(t);
     renderFocus();
   });
 
   // Focus mode controls
-  $('#focusPrev').click(function() {
+  $id('focusPrev').addEventListener('click', function() {
     if (state.currentIdx > 0) setCurrentLine(state.currentIdx - 1);
   });
-  $('#focusNext').click(function() {
+  $id('focusNext').addEventListener('click', function() {
     if (state.currentIdx < state.lines.length - 1) setCurrentLine(state.currentIdx + 1);
   });
-  $('#focusDec').click(function() {
+  $id('focusDec').addEventListener('click', function() {
     adjustTime(state.currentIdx, -0.05);
     if (state.focusMode) renderFocus();
   });
-  $('#focusInc').click(function() {
+  $id('focusInc').addEventListener('click', function() {
     adjustTime(state.currentIdx, 0.05);
     if (state.focusMode) renderFocus();
   });
-  $('#focusSnap').click(function() {
+  $id('focusSnap').addEventListener('click', function() {
     snapTime();
     if (state.focusMode) renderFocus();
   });
 
   // Metadata inputs
-  $('#titleInput').on('change', function() { state.title = $(this).val(); });
-  $('#artistInput').on('change', function() { state.artist = $(this).val(); });
+  $id('titleInput').addEventListener('change', function() { state.title = this.value; });
+  $id('artistInput').addEventListener('change', function() { state.artist = this.value; });
 
   // Export
-  $('#exportLrc').click(doExportLRC);
-  $('#exportSrt').click(doExportSRT);
+  $id('exportLrc').addEventListener('click', doExportLRC);
+  $id('exportSrt').addEventListener('click', doExportSRT);
 
   // Drag & Drop
   var dropCount = 0;
@@ -681,24 +791,24 @@ $(document).ready(function() {
   function isLyricsFile(file) {
     return /\.(lrc|txt)$/i.test(file.name);
   }
-  $(document).on('dragenter', function(e) {
+  document.addEventListener('dragenter', function(e) {
     e.preventDefault();
     dropCount++;
-    $('body').addClass('drag-over');
+    document.body.classList.add('drag-over');
   });
-  $(document).on('dragover', function(e) {
+  document.addEventListener('dragover', function(e) {
     e.preventDefault();
   });
-  $(document).on('dragleave', function(e) {
+  document.addEventListener('dragleave', function(e) {
     e.preventDefault();
     dropCount--;
-    if (dropCount <= 0) { dropCount = 0; $('body').removeClass('drag-over'); }
+    if (dropCount <= 0) { dropCount = 0; document.body.classList.remove('drag-over'); }
   });
-  $(document).on('drop', function(e) {
+  document.addEventListener('drop', function(e) {
     e.preventDefault();
     dropCount = 0;
-    $('body').removeClass('drag-over');
-    var files = e.originalEvent.dataTransfer.files;
+    document.body.classList.remove('drag-over');
+    var files = e.dataTransfer.files;
     if (!files || files.length === 0) return;
     for (var i = 0; i < files.length; i++) {
       var f = files[i];
@@ -708,9 +818,9 @@ $(document).ready(function() {
   });
 
   // Keyboard
-  $(document).on('keydown', onKeyDown);
+  document.addEventListener('keydown', onKeyDown);
 
   // Initial render
   renderTable();
   updateTimeDisplay();
-});
+})();
