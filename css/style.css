@@ -28,7 +28,7 @@ html, body {
 .container-fluid {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
 }
 .container-fluid > .text-center {
   flex-shrink: 0;
