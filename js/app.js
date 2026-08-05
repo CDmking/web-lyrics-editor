@@ -30,12 +30,12 @@ function timeToStr(t) {
 }
 
 function strToTime(s) {
-  var m = s.match(/^(\d{1,2}):(\d{2})[.:](\d{1,3})$/);
-  if (!m) return 0;
+  var m = s.match(/^(\d{1,2}):(\d{1,2})[.:](\d{1,3})$/);
+  if (!m) return null;
   var min = parseInt(m[1], 10);
   var sec = parseInt(m[2], 10);
-  var frac = parseInt(m[3].padEnd(2, '0').slice(0, 2), 10);
-  return min * 60 + sec + frac / 100;
+  var frac = parseFloat('0.' + m[3]);
+  return round2(min * 60 + sec + frac);
 }
 
 function timeToSrt(t) {
@@ -99,11 +99,12 @@ function parseLRC(text) {
     var remaining = line;
     var times = [];
     var match;
-    while ((match = remaining.match(/^\[(\d{2}):(\d{2})[.:](\d{2,3})\]/)) !== null) {
+    while ((match = remaining.match(/^\[(\d{1,2}):(\d{1,2})[.:](\d{1,3})\]/)) !== null) {
       var min = parseInt(match[1], 10);
       var sec = parseInt(match[2], 10);
       var frac = parseInt(match[3], 10);
-      times.push(min * 60 + sec + frac / (match[3].length === 3 ? 1000 : 100));
+      var div = match[3].length === 1 ? 10 : (match[3].length === 3 ? 1000 : 100);
+      times.push(min * 60 + sec + frac / div);
       remaining = remaining.slice(match[0].length);
     }
     if (times.length > 0) {
@@ -589,6 +590,9 @@ function onKeyDown(e) {
   state.audio.addEventListener('loadedmetadata', function() {
     updateTimeDisplay();
   });
+  // 后台标签页 rAF 暂停时由 timeupdate 兜底保持同步（浏览器节流至约 1-4Hz）
+  // Keep sync when the tab is backgrounded (rAF pauses; timeupdate still fires)
+  state.audio.addEventListener('timeupdate', onTimeUpdate);
 
   // rAF sync loop
   function syncLoop() {
@@ -739,7 +743,8 @@ function onKeyDown(e) {
     if (!input) return;
     var idx = parseInt(input.closest('tr').dataset.idx, 10);
     var newTime = strToTime(input.value);
-    state.lines[idx].start = round2(newTime);
+    if (newTime === null) { input.value = timeToStr(state.lines[idx].start); return; }
+    state.lines[idx].start = newTime;
     renderTable();
   });
 
@@ -767,7 +772,8 @@ function onKeyDown(e) {
     if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) return;
     if (state.lines[state.currentIdx].locked) return;
     var t = strToTime(this.value);
-    state.lines[state.currentIdx].start = round2(t);
+    if (t === null) { this.value = timeToStr(state.lines[state.currentIdx].start); return; }
+    state.lines[state.currentIdx].start = t;
     renderFocus();
   });
 
