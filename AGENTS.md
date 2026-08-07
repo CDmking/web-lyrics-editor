@@ -14,7 +14,7 @@ Edit `js/app.js` or `css/style.css`, then refresh browser.
 
 ## Architecture
 
-- **`js/app.js`** (~884 lines) — the entire application. All logic, rendering, state, and event binding in one file.
+- **`js/app.js`** (~835 lines) — the entire application. All logic, rendering, state, and event binding in one file.
 - **Single state object** (`state` in `js/app.js:74`). All mutations go through `renderTable()` / `renderFocus()` — no two-way binding.
 - **`index.html`** — Bootstrap 5 layout, loads 3 scripts (bootstrap, Sortable, app.js) at bottom.
 - **`server/`** — contains a prebuilt Caddy binary for local serving; not part of the app itself.
@@ -34,14 +34,14 @@ Edit `js/app.js` or `css/style.css`, then refresh browser.
 | Lines | Module |
 |-------|--------|
 | 19–53 | Utility functions (`timeToStr`, `strToTime`, `timeToSrt`, etc.) |
-| 54–72 | DOM helpers (`$id`, `el`, `cls`, `append`) |
+| 54–72 | DOM helpers (`$id`, `el`, `cls`, `append`, `rowIdx`) |
 | 73–90 | State object |
 | 91–132 | LRC parser (`parseLRC`) |
 | 133–158 | Export generators (`generateLRC`, `generateSRT`) |
-| 159–373 | Render functions |
-| 374–391 | Audio time sync |
-| 392–486 | Operations (snap, adjust, add, delete, batch) |
-| 601–884 | Initialization and event binding |
+| 159–362 | Render functions |
+| 363–380 | Audio time sync |
+| 381–477 | Operations (snap, adjust, add, delete, batch) |
+| 589–835 | Initialization and event binding |
 
 ## Gotchas
 

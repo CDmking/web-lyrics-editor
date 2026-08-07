@@ -58,8 +58,6 @@ var $qa = document.querySelectorAll.bind(document);
 
 function el(tag) { return document.createElement(tag); }
 
-function attr(el, name, val) { el.setAttribute(name, val); return el; }
-
 function cls(el) {
   for (var i = 1; i < arguments.length; i++) el.classList.add(arguments[i]);
   return el;
@@ -69,6 +67,8 @@ function append(parent) {
   for (var i = 1; i < arguments.length; i++) parent.appendChild(arguments[i]);
   return parent;
 }
+
+function rowIdx(node) { return parseInt(node.closest('tr').dataset.idx, 10); }
 
 // ===== State =====
 var state = {
@@ -118,7 +118,7 @@ function parseLRC(text) {
     if (ar) { artist = ar[1].trim(); return; }
     var off = line.match(/^\[offset:([+-]?\d+)\]/i);
     if (off) { fileOffsetMs = parseInt(off[1], 10); return; }
-    if (line && !line.match(/^\[.+\]$/)) {
+    if (!line.match(/^\[.+\]$/)) {
       lines.push({ start: 0, text: line });
     }
   });
@@ -324,7 +324,6 @@ function renderFocus() {
   applyPrevNextVisibility();
   if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) {
     $id('focusLyric').textContent = '\u2014';
-    $id('focusLyric').style.fontSize = '2.2rem';
     $id('focusTime').value = '00:00.00';
     $id('focusIdx').textContent = '- / -';
     $id('focusPrevLine').textContent = '';
@@ -344,20 +343,10 @@ function renderFocus() {
   var idxW = String(state.lines.length).length * 2 + 1;
   $id('focusIdx').textContent = (state.currentIdx + 1) + ' / ' + state.lines.length;
   $id('focusIdx').style.minWidth = idxW + 'em';
-  if (state.currentIdx > 0) {
-    $id('focusPrevLine').textContent = state.lines[state.currentIdx - 1].text;
-    $id('focusPrevLine').parentElement.style.display = '';
-  } else {
-    $id('focusPrevLine').textContent = '(\u65e0)';
-    $id('focusPrevLine').parentElement.style.display = '';
-  }
-  if (state.currentIdx < state.lines.length - 1) {
-    $id('focusNextLine').textContent = state.lines[state.currentIdx + 1].text;
-    $id('focusNextLine').parentElement.style.display = '';
-  } else {
-    $id('focusNextLine').textContent = '(\u65e0)';
-    $id('focusNextLine').parentElement.style.display = '';
-  }
+  $id('focusPrevLine').textContent = state.currentIdx > 0 ? state.lines[state.currentIdx - 1].text : '(\u65e0)';
+  $id('focusPrevLine').parentElement.style.display = '';
+  $id('focusNextLine').textContent = state.currentIdx < state.lines.length - 1 ? state.lines[state.currentIdx + 1].text : '(\u65e0)';
+  $id('focusNextLine').parentElement.style.display = '';
 }
 
 function updateTimeDisplay() {
@@ -422,7 +411,7 @@ function addLineAt(idx) {
   var audio = state.audio;
   if (audio && audio.src && isFinite(audio.currentTime)) {
     start = round2(Math.max(0, audio.currentTime - state.offset));
-  } else if (idx > 0 && idx <= state.lines.length && state.lines.length > 0) {
+  } else if (idx > 0 && idx <= state.lines.length) {
     start = state.lines[idx - 1].start + 1;
   } else if (state.lines.length > 0) {
     start = state.lines[0].start;
@@ -437,13 +426,7 @@ function addLineAt(idx) {
 function deleteLine(idx) {
   if (state.lines.length === 0) return;
   state.lines.splice(idx, 1);
-  if (state.lines.length === 0) {
-    state.currentIdx = -1;
-  } else if (idx >= state.lines.length) {
-    state.currentIdx = state.lines.length - 1;
-  } else {
-    state.currentIdx = idx;
-  }
+  state.currentIdx = Math.min(idx, state.lines.length - 1);
   renderTable();
 }
 
@@ -482,6 +465,14 @@ function toggleFocus() {
     $id('focusToggle').textContent = '\u4e13\u6ce8';
     renderTable();
   }
+}
+
+function exitBatchMode() {
+  state.batchMode = false;
+  $q('#batchMenu [data-action="batch-offset"]').classList.remove('active');
+  $id('offsetDec').classList.remove('btn-batch');
+  $id('offsetInc').classList.remove('btn-batch');
+  $id('offsetLabel').textContent = '\u5168\u5c40\u504f\u79fb\uff1a';
 }
 
 // ===== Load Data =====
@@ -579,11 +570,8 @@ function onKeyDown(e) {
     toggleFocus();
     return;
   }
-  if (e.key === 'Escape') {
-    if (state.focusMode) {
-      toggleFocus();
-      return;
-    }
+  if (e.key === 'Escape' && state.focusMode) {
+    toggleFocus();
     return;
   }
   if ((e.key === 'ArrowUp' || (e.key === 'ArrowLeft' && state.focusMode)) && !editing) {
@@ -663,13 +651,7 @@ function onKeyDown(e) {
     state.useCheckboxes = !state.useCheckboxes;
     if (!state.useCheckboxes) {
       state.selectedIndices = [];
-      if (state.batchMode) {
-        state.batchMode = false;
-        $q('#batchMenu [data-action="batch-offset"]').classList.remove('active');
-        $id('offsetDec').classList.remove('btn-batch');
-        $id('offsetInc').classList.remove('btn-batch');
-        $id('offsetLabel').textContent = '\u5168\u5c40\u504f\u79fb\uff1a';
-      }
+      if (state.batchMode) exitBatchMode();
     }
     this.textContent = state.useCheckboxes ? '\u62d6\u62fd' : '\u591a\u9009';
     renderTable();
@@ -696,28 +678,39 @@ function onKeyDown(e) {
       indices.forEach(function(i) { state.lines.splice(i, 1); });
       state.selectedIndices = [];
       state.currentIdx = -1;
-      if (state.batchMode) {
-        state.batchMode = false;
-        $q('#batchMenu [data-action="batch-offset"]').classList.remove('active');
-        $id('offsetDec').classList.remove('btn-batch');
-        $id('offsetInc').classList.remove('btn-batch');
-        $id('offsetLabel').textContent = '\u5168\u5c40\u504f\u79fb\uff1a';
-      }
+      if (state.batchMode) exitBatchMode();
       renderTable();
     }
   });
 
-  // Row checkbox
+  // Table: checkbox / lyric / time input changes
   $id('tableBody').addEventListener('change', function(e) {
-    var cb = e.target.closest('.row-checkbox');
-    if (!cb) return;
-    var idx = parseInt(cb.closest('tr').dataset.idx, 10);
-    if (cb.checked) {
-      if (state.selectedIndices.indexOf(idx) < 0) state.selectedIndices.push(idx);
-    } else {
-      state.selectedIndices = state.selectedIndices.filter(function(i) { return i !== idx; });
+    var input = e.target.closest('.row-checkbox');
+    var idx;
+    if (input) {
+      idx = rowIdx(input);
+      if (input.checked) {
+        if (state.selectedIndices.indexOf(idx) < 0) state.selectedIndices.push(idx);
+      } else {
+        state.selectedIndices = state.selectedIndices.filter(function(i) { return i !== idx; });
+      }
+      updateSelectAll();
+      return;
     }
-    updateSelectAll();
+    input = e.target.closest('.lyric-input');
+    if (input) {
+      idx = rowIdx(input);
+      if (!isNaN(idx)) state.lines[idx].text = input.value;
+      return;
+    }
+    input = e.target.closest('.time-edit-input');
+    if (input) {
+      idx = rowIdx(input);
+      var newTime = strToTime(input.value);
+      if (newTime === null) { input.value = timeToStr(state.lines[idx].start); return; }
+      state.lines[idx].start = newTime;
+      renderTable();
+    }
   });
 
   // Select all checkbox (header)
@@ -740,64 +733,22 @@ function onKeyDown(e) {
     if (state.focusMode) renderFocus();
   });
 
-  // Table: row click (seek)
-  $id('tableBody').addEventListener('click', function(e) {
-    if (e.target.closest('button, input, .btn-time')) return;
-    var tr = e.target.closest('tr');
-    if (!tr) return;
-    var idx = parseInt(tr.dataset.idx, 10);
-    if (!isNaN(idx)) setCurrentLine(idx);
-  });
-
-  // Table: time adjust buttons
+  // Table: buttons + row click (seek)
   $id('tableBody').addEventListener('click', function(e) {
     var btn = e.target.closest('[data-action="dec"]');
-    if (btn) {
-      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
-      adjustTime(idx, -0.05);
-    }
-  });
-  $id('tableBody').addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-action="inc"]');
-    if (btn) {
-      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
-      adjustTime(idx, 0.05);
-    }
-  });
-
-  // Table: lyric text change
-  $id('tableBody').addEventListener('change', function(e) {
-    var input = e.target.closest('.lyric-input');
-    if (!input) return;
-    var idx = parseInt(input.closest('tr').dataset.idx, 10);
-    if (!isNaN(idx)) state.lines[idx].text = input.value;
-  });
-
-  // Table: time input change
-  $id('tableBody').addEventListener('change', function(e) {
-    var input = e.target.closest('.time-edit-input');
-    if (!input) return;
-    var idx = parseInt(input.closest('tr').dataset.idx, 10);
-    var newTime = strToTime(input.value);
-    if (newTime === null) { input.value = timeToStr(state.lines[idx].start); return; }
-    state.lines[idx].start = newTime;
-    renderTable();
-  });
-
-  // Table: add / delete row buttons
-  $id('tableBody').addEventListener('click', function(e) {
-    var btn = e.target.closest('.btn-row-add');
-    if (btn) {
-      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
-      addLineAt(idx + 1);
-    }
-  });
-  $id('tableBody').addEventListener('click', function(e) {
-    var btn = e.target.closest('.btn-row-del');
-    if (btn) {
-      var idx = parseInt(btn.closest('tr').dataset.idx, 10);
-      deleteLine(idx);
-    }
+    var idx;
+    if (btn) { adjustTime(rowIdx(btn), -0.05); return; }
+    btn = e.target.closest('[data-action="inc"]');
+    if (btn) { adjustTime(rowIdx(btn), 0.05); return; }
+    btn = e.target.closest('.btn-row-add');
+    if (btn) { addLineAt(rowIdx(btn) + 1); return; }
+    btn = e.target.closest('.btn-row-del');
+    if (btn) { deleteLine(rowIdx(btn)); return; }
+    if (e.target.closest('button, input')) return;
+    var tr = e.target.closest('tr');
+    if (!tr) return;
+    idx = rowIdx(tr);
+    if (!isNaN(idx)) setCurrentLine(idx);
   });
   $id('headAddBtn').addEventListener('click', function() {
     addLineAt(0);

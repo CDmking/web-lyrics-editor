@@ -87,7 +87,7 @@ Web-Lyrics-Editor/
 
 | 组件 | 说明 |
 |------|------|
-| **原生 JavaScript** | 零框架、零构建工具，全部逻辑在 `app.js`（约 884 行） |
+| **原生 JavaScript** | 零框架、零构建工具，全部逻辑在 `app.js`（约 835 行） |
 | **Bootstrap 5** | UI 组件（卡片、模态框、表单） |
 | **SortableJS** | 拖拽排序 |
 
@@ -100,16 +100,16 @@ Web-Lyrics-Editor/
 | 模块 | 行号 | 职责 |
 |------|------|------|
 | 工具函数 | 19–53 | `timeToStr` / `strToTime` / `timeToSrt` / `pad` / `round2` |
-| DOM 辅助 | 54–72 | `$id` / `el` / `cls` / `append` |
+| DOM 辅助 | 54–72 | `$id` / `el` / `cls` / `append` / `rowIdx` |
 | 状态管理 | 73–90 | `state` 对象（唯一数据源） |
 | LRC 解析器 | 91–132 | `parseLRC` — 解析带时间戳的 LRC 文本 |
 | 生成器 | 133–158 | `generateLRC` / `generateSRT` — 导出格式 |
-| 渲染引擎 | 159–373 | `renderTable` / `renderFocus` / `updateHighlight` / `updateTimeDisplay` |
-| 音频同步 | 374–391 | `onTimeUpdate` — 播放时自动高亮当前行 |
-| 操作逻辑 | 392–486 | `snapTime` / `adjustTime` / `addLineAt` / `deleteLine` / `batchOffset` / `toggleFocus` |
-| 文件处理 | 530–560 | `onAudioFile` / `onLRCFile` / `onLyricsText` |
-| 键盘处理 | 561–600 | 快捷键映射 |
-| 初始化 | 601–884 | DOM 事件绑定、拖放支持、首次渲染 |
+| 渲染引擎 | 159–362 | `renderTable` / `renderFocus` / `updateHighlight` / `updateTimeDisplay` |
+| 音频同步 | 363–380 | `onTimeUpdate` — 播放时自动高亮当前行 |
+| 操作逻辑 | 381–477 | `snapTime` / `adjustTime` / `addLineAt` / `deleteLine` / `batchOffset` / `toggleFocus` |
+| 文件处理 | 521–551 | `onAudioFile` / `onLRCFile` / `onLyricsText` |
+| 键盘处理 | 552–588 | 快捷键映射 |
+| 初始化 | 589–835 | DOM 事件绑定、拖放支持、首次渲染 |
 
 **数据流：** `state` 对象为唯一数据源，所有修改通过 `renderTable()` / `renderFocus()` 单向渲染视图，无双向绑定。
 

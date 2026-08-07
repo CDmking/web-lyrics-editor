@@ -349,7 +349,7 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-.drop-overlay.active {
+body.drag-over .drop-overlay {
   display: flex;
 }
 .drop-overlay-text {
