@@ -102,7 +102,9 @@
               <table class="table table-lyrics mb-0" id="lyricsHeaderTable">
                 <thead>
                     <tr>
-                      <th class="col-drag"></th>
+                      <th class="col-drag">
+                        <input type="checkbox" class="row-checkbox" id="selectAllCb" title="全选">
+                      </th>
                       <th class="col-indicator"></th>
                       <th class="col-time">时间</th>
                     <th class="col-lyric-header"><span class="col-lyric-header-inner">歌词 <button class="btn-head-add" id="headAddBtn" title="在第一行前添加">+</button></span></th>
@@ -130,8 +132,12 @@
                 <button class="btn btn-outline-secondary btn-sm focus-btn" id="focusDec">−</button>
                 <button class="btn btn-outline-secondary btn-sm focus-btn" id="focusInc">+</button>
                 <button class="btn btn-primary btn-sm" id="focusSnap">S 打点</button>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="prevNextToggle" checked>
+                  <label class="form-check-label small text-nowrap" for="prevNextToggle">上下文</label>
+                </div>
               </div>
-              <div class="focus-preview">
+              <div class="focus-preview" id="focusPreview">
                 <div class="focus-prev"><span class="text-muted small">上一句:</span> <span id="focusPrevLine"></span></div>
                 <div class="focus-next"><span class="text-muted small">下一句:</span> <span id="focusNextLine"></span></div>
               </div>

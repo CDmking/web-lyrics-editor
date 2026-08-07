@@ -14,7 +14,7 @@ Edit `js/app.js` or `css/style.css`, then refresh browser.
 
 ## Architecture
 
-- **`js/app.js`** (~848 lines) — the entire application. All logic, rendering, state, and event binding in one file.
+- **`js/app.js`** (~884 lines) — the entire application. All logic, rendering, state, and event binding in one file.
 - **Single state object** (`state` in `js/app.js:74`). All mutations go through `renderTable()` / `renderFocus()` — no two-way binding.
 - **`index.html`** — Bootstrap 5 layout, loads 3 scripts (bootstrap, Sortable, app.js) at bottom.
 - **`server/`** — contains a prebuilt Caddy binary for local serving; not part of the app itself.
@@ -34,14 +34,14 @@ Edit `js/app.js` or `css/style.css`, then refresh browser.
 | Lines | Module |
 |-------|--------|
 | 19–53 | Utility functions (`timeToStr`, `strToTime`, `timeToSrt`, etc.) |
-| 54–71 | DOM helpers (`$id`, `el`, `cls`, `append`) |
-| 73–88 | State object |
-| 90–131 | LRC parser (`parseLRC`) |
-| 132–157 | Export generators (`generateLRC`, `generateSRT`) |
-| 158–355 | Render functions |
-| 356–373 | Audio time sync |
-| 374–468 | Operations (snap, adjust, add, delete, batch) |
-| 583–848 | Initialization and event binding |
+| 54–72 | DOM helpers (`$id`, `el`, `cls`, `append`) |
+| 73–90 | State object |
+| 91–132 | LRC parser (`parseLRC`) |
+| 133–158 | Export generators (`generateLRC`, `generateSRT`) |
+| 159–373 | Render functions |
+| 374–391 | Audio time sync |
+| 392–486 | Operations (snap, adjust, add, delete, batch) |
+| 601–884 | Initialization and event binding |
 
 ## Gotchas
 
@@ -52,3 +52,4 @@ Edit `js/app.js` or `css/style.css`, then refresh browser.
 - `strToTime` returns `null` on unparseable input (e.g. `1:2.3`, `01:23`, SRT-style `00:01:23,456`); callers restore the previous value instead of writing `00:00.00`. Fractions are rounded to centiseconds (`01:23.456` → `01:23.46`).
 - The LRC parser tolerates 1–2 digit minutes/seconds and 1–3 digit fractions (`[1:02.30]`, `[01:02.5]`): 1 digit = tenths of a second, 3 digits = milliseconds. 3+ digit minutes (`[123:45.67]`) still fall back to a `start: 0` plain line.
 - Highlight sync runs on `requestAnimationFrame` (frame-accurate while the tab is visible) with a `timeupdate` fallback that keeps the highlight following playback when the tab is backgrounded (rAF pauses; `timeupdate` still fires, throttled to ~1–4Hz).
+- The header 全选 checkbox is derived UI state: `updateSelectAll()` runs at the top of `renderTable()` and in the row-checkbox `change` handler. Any new code path that mutates `state.selectedIndices` must also sync it (call `updateSelectAll()` or route through `renderTable()`).

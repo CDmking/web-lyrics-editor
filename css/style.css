@@ -330,6 +330,13 @@ html, body {
   white-space: nowrap;
 }
 
+/* === Prev/Next Context Switch === */
+/* Switch lives inside the focus controls; keep label on one line */
+.focus-controls .form-check-label {
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 /* === Drop Overlay === */
 .drop-overlay {
   display: none;

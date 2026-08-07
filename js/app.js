@@ -80,6 +80,7 @@ var state = {
   offset: 0,
   appliedOffsetStep: 0,
   focusMode: false,
+  showPrevNext: true,
   title: '',
   artist: '',
   useCheckboxes: true,
@@ -156,7 +157,18 @@ function generateSRT() {
 }
 
 // ===== Rendering =====
+function updateSelectAll() {
+  var cb = $id('selectAllCb');
+  if (!cb) return;
+  cb.style.display = state.useCheckboxes ? '' : 'none';
+  var n = state.lines.length;
+  var selected = state.selectedIndices.length;
+  cb.checked = n > 0 && selected === n;
+  cb.indeterminate = selected > 0 && selected < n;
+}
+
 function renderTable() {
+  updateSelectAll();
   var tbody = $id('tableBody');
   tbody.innerHTML = '';
   if (state.lines.length === 0) {
@@ -303,7 +315,13 @@ function updateLineCount() {
   $id('lineCount').textContent = s;
 }
 
+function applyPrevNextVisibility() {
+  var wrap = $id('focusPreview');
+  if (wrap) wrap.style.display = state.showPrevNext ? '' : 'none';
+}
+
 function renderFocus() {
+  applyPrevNextVisibility();
   if (state.currentIdx < 0 || state.currentIdx >= state.lines.length) {
     $id('focusLyric').textContent = '\u2014';
     $id('focusLyric').style.fontSize = '2.2rem';
@@ -699,10 +717,28 @@ function onKeyDown(e) {
     } else {
       state.selectedIndices = state.selectedIndices.filter(function(i) { return i !== idx; });
     }
+    updateSelectAll();
+  });
+
+  // Select all checkbox (header)
+  $id('selectAllCb').addEventListener('change', function() {
+    if (this.checked) {
+      state.selectedIndices = [];
+      for (var i = 0; i < state.lines.length; i++) state.selectedIndices.push(i);
+    } else {
+      state.selectedIndices = [];
+    }
+    renderTable();
   });
 
   // Focus toggle
   $id('focusToggle').addEventListener('click', toggleFocus);
+
+  // Focus: show/hide prev-next context lines
+  $id('prevNextToggle').addEventListener('change', function() {
+    state.showPrevNext = this.checked;
+    if (state.focusMode) renderFocus();
+  });
 
   // Table: row click (seek)
   $id('tableBody').addEventListener('click', function(e) {

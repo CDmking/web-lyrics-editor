@@ -10,10 +10,10 @@
 - **歌词导入** — 解析标准 LRC 文件（含 `[ti:]`、`[ar:]`、`[offset:]` 元信息），也支持粘贴纯文本歌词（无时间戳行自动归零）
 - **拖放加载** — 直接拖拽音频或 LRC 文件到页面
 - **表格模式** — 逐行编辑时间戳与歌词文本，实时增删行
-- **专注模式** — 大字体单行显示，搭配上/下一句预览，适合逐句精调
+- **专注模式** — 大字体单行显示，搭配上/下一句预览（可用「上下文」开关隐藏），适合逐句精调
 - **S 键打点** — 播放音频时按 `S` 自动将当前播放位置写入时间戳
 - **全局偏移** — 以 0.05s 步进微调整首歌词整体偏移
-- **批量操作** — 多选后批量偏移 / 删除 / 锁定时间戳
+- **批量操作** — 表头「全选」复选框（支持半选态），多选后批量偏移 / 删除 / 锁定时间戳
 - **拖拽排序** — 开启后通过拖拽手柄重排歌词行顺序
 - **时间锁定** — 锁定已对齐的行，防止误修改
 - **导出** — LRC / SRT
@@ -41,7 +41,7 @@ python -m http.server 8080
 2. **导入歌词** — 点击「导入 LRC」加载已有 LRC 文件，或点击「粘贴歌词」粘贴纯文本
 3. **同步打点** — 播放音频，在每句歌词对应位置点击该行 → 按 `S` 键自动写入当前时间戳
 4. **微调** — 使用行内 `+`/`−` 按钮按 0.05s 步进微调，或直接编辑时间输入框
-5. **批量偏移** — 勾选多行 → 批量操作菜单 → 批量偏移
+5. **批量偏移** — 勾选多行（表头复选框可全选 / 部分选中）→ 批量操作菜单 → 批量偏移
 6. **导出** — 点击「导出 LRC」或「导出 SRT」下载文件
 
 ### 模式切换
@@ -87,7 +87,7 @@ Web-Lyrics-Editor/
 
 | 组件 | 说明 |
 |------|------|
-| **原生 JavaScript** | 零框架、零构建工具，全部逻辑在 `app.js`（约 826 行） |
+| **原生 JavaScript** | 零框架、零构建工具，全部逻辑在 `app.js`（约 884 行） |
 | **Bootstrap 5** | UI 组件（卡片、模态框、表单） |
 | **SortableJS** | 拖拽排序 |
 
@@ -99,17 +99,17 @@ Web-Lyrics-Editor/
 
 | 模块 | 行号 | 职责 |
 |------|------|------|
-| 工具函数 | 4–36 | `timeToStr` / `strToTime` / `timeToSrt` / `pad` / `round2` |
-| DOM 辅助 | 39–55 | `$id` / `el` / `cls` / `append` |
-| 状态管理 | 58–72 | `state` 对象（唯一数据源） |
-| LRC 解析器 | 75–113 | `parseLRC` — 解析带时间戳的 LRC 文本 |
-| 生成器 | 116–139 | `generateLRC` / `generateSRT` — 导出格式 |
-| 渲染引擎 | 142–337 | `renderTable` / `renderFocus` / `updateHighlight` / `updateTimeDisplay` |
-| 音频同步 | 340–355 | `onTimeUpdate` — 播放时自动高亮当前行 |
-| 操作逻辑 | 358–450 | `snapTime` / `adjustTime` / `addLineAt` / `deleteLine` / `batchOffset` / `toggleFocus` |
-| 文件处理 | 496–524 | `onAudioFile` / `onLRCFile` / `onLyricsText` |
-| 键盘处理 | 527–564 | 快捷键映射 |
-| 初始化 | 567–826 | DOM 事件绑定、拖放支持、首次渲染 |
+| 工具函数 | 19–53 | `timeToStr` / `strToTime` / `timeToSrt` / `pad` / `round2` |
+| DOM 辅助 | 54–72 | `$id` / `el` / `cls` / `append` |
+| 状态管理 | 73–90 | `state` 对象（唯一数据源） |
+| LRC 解析器 | 91–132 | `parseLRC` — 解析带时间戳的 LRC 文本 |
+| 生成器 | 133–158 | `generateLRC` / `generateSRT` — 导出格式 |
+| 渲染引擎 | 159–373 | `renderTable` / `renderFocus` / `updateHighlight` / `updateTimeDisplay` |
+| 音频同步 | 374–391 | `onTimeUpdate` — 播放时自动高亮当前行 |
+| 操作逻辑 | 392–486 | `snapTime` / `adjustTime` / `addLineAt` / `deleteLine` / `batchOffset` / `toggleFocus` |
+| 文件处理 | 530–560 | `onAudioFile` / `onLRCFile` / `onLyricsText` |
+| 键盘处理 | 561–600 | 快捷键映射 |
+| 初始化 | 601–884 | DOM 事件绑定、拖放支持、首次渲染 |
 
 **数据流：** `state` 对象为唯一数据源，所有修改通过 `renderTable()` / `renderFocus()` 单向渲染视图，无双向绑定。
 
@@ -118,7 +118,7 @@ Web-Lyrics-Editor/
 ## 开发 / 扩展
 
 - **无需构建工具**，直接编辑 `js/app.js` 和 `css/style.css` 后刷新浏览器即可
-- **添加导出格式**：参考 `generateLRC()`（约 116 行）和 `generateSRT()`（约 127 行）的模式，在 `state.lines` 上遍历生成文本，然后调用 `downloadFile()`
+- **添加导出格式**：参考 `generateLRC()`（约 134 行）和 `generateSRT()`（约 145 行）的模式，在 `state.lines` 上遍历生成文本，然后调用 `downloadFile()`
 - **本地化**：UI 文字直接分布在 `index.html` 和 `app.js` 的渲染函数中，搜索中文文本即可定位
 - **开发服务器**：修改后刷新浏览器即可，无需额外步骤
 
