@@ -76,7 +76,13 @@ Web-Lyrics-Editor/
 │   ├── style.css           # 自定义样式（编辑器布局、专注模式、拖拽等）
 │   └── bootstrap.min.css   # Bootstrap 5 UI 框架
 ├── js/
-│   ├── app.js              # 全部应用逻辑（状态管理、渲染、事件、导出）
+│   ├── state.js            # 全局 state 对象
+│   ├── utils.js            # 工具函数 + DOM 辅助
+│   ├── parser.js           # LRC 解析器
+│   ├── generators.js       # LRC / SRT 生成及导出
+│   ├── render.js           # 全部渲染函数 + Sortable 初始化
+│   ├── actions.js          # 音频同步、操作逻辑、文件处理、键盘事件
+│   ├── app.js              # 初始化 IIFE（事件绑定、rAF 循环、启动）
 │   ├── bootstrap.bundle.min.js
 │   └── Sortable.min.js     # 拖拽排序库
 ```
@@ -87,7 +93,7 @@ Web-Lyrics-Editor/
 
 | 组件 | 说明 |
 |------|------|
-| **原生 JavaScript** | 零框架、零构建工具，全部逻辑在 `app.js`（约 835 行） |
+| **原生 JavaScript** | 零框架、零构建工具，逻辑分布在 7 个 JS 文件中，通过有序 `<script>` 标签加载 |
 | **Bootstrap 5** | UI 组件（卡片、模态框、表单） |
 | **SortableJS** | 拖拽排序 |
 
@@ -95,31 +101,29 @@ Web-Lyrics-Editor/
 
 ## 代码架构
 
-`js/app.js` 是唯一逻辑文件，内部模块划分：
+`js/` 目录下 7 个 JS 文件按依赖顺序加载（`index.html:196-204`），所有函数保持全局作用域：
 
-| 模块 | 行号 | 职责 |
-|------|------|------|
-| 工具函数 | 19–53 | `timeToStr` / `strToTime` / `timeToSrt` / `pad` / `round2` |
-| DOM 辅助 | 54–72 | `$id` / `el` / `cls` / `append` / `rowIdx` |
-| 状态管理 | 73–90 | `state` 对象（唯一数据源） |
-| LRC 解析器 | 91–132 | `parseLRC` — 解析带时间戳的 LRC 文本 |
-| 生成器 | 133–158 | `generateLRC` / `generateSRT` — 导出格式 |
-| 渲染引擎 | 159–362 | `renderTable` / `renderFocus` / `updateHighlight` / `updateTimeDisplay` |
-| 音频同步 | 363–380 | `onTimeUpdate` — 播放时自动高亮当前行 |
-| 操作逻辑 | 381–477 | `snapTime` / `adjustTime` / `addLineAt` / `deleteLine` / `batchOffset` / `toggleFocus` |
-| 文件处理 | 521–551 | `onAudioFile` / `onLRCFile` / `onLyricsText` |
-| 键盘处理 | 552–588 | 快捷键映射 |
-| 初始化 | 589–835 | DOM 事件绑定、拖放支持、首次渲染 |
+| 文件 | 职责 |
+|------|------|
+| `state.js` | `state` 对象 — 唯一数据源 |
+| `utils.js` | `pad` / `round2` / `timeToStr` / `strToTime` / `timeToSrt` + DOM 辅助函数 |
+| `parser.js` | `parseLRC` — 解析带时间戳的 LRC 文本 |
+| `generators.js` | `generateLRC` / `generateSRT` / `downloadFile` — 导出 |
+| `render.js` | `renderTable` / `renderFocus` / `updateHighlight` / `initSortable` — 渲染与拖拽 |
+| `actions.js` | `onTimeUpdate` / `snapTime` / `setOffset` / `toggleFocus` / `onKeyDown` — 交互逻辑 |
+| `app.js` | 初始化 IIFE — 事件绑定、rAF 循环、拖放支持、首次渲染 |
 
 **数据流：** `state` 对象为唯一数据源，所有修改通过 `renderTable()` / `renderFocus()` 单向渲染视图，无双向绑定。
+
+**依赖层级：** `state` / `utils` → `parser` / `generators` → `render` → `actions` → `app`
 
 ---
 
 ## 开发 / 扩展
 
-- **无需构建工具**，直接编辑 `js/app.js` 和 `css/style.css` 后刷新浏览器即可
-- **添加导出格式**：参考 `generateLRC()`（约 134 行）和 `generateSRT()`（约 145 行）的模式，在 `state.lines` 上遍历生成文本，然后调用 `downloadFile()`
-- **本地化**：UI 文字直接分布在 `index.html` 和 `app.js` 的渲染函数中，搜索中文文本即可定位
+- **无需构建工具**，直接编辑 `js/` 目录下对应文件或 `css/style.css` 后刷新浏览器即可
+- **添加导出格式**：参考 `js/generators.js` 中的 `generateLRC()` 和 `generateSRT()` 模式，在 `state.lines` 上遍历生成文本，然后调用 `downloadFile()`
+- **本地化**：UI 文字直接分布在 `index.html` 和各 JS 文件的渲染/事件函数中，搜索中文文本即可定位
 - **开发服务器**：修改后刷新浏览器即可，无需额外步骤
 
 ---

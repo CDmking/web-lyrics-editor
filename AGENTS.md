@@ -10,13 +10,13 @@ python -m http.server 8080
 Or double-click `index.html` (file:// may block local audio in some browsers).\
 Or run `server\start.cmd` (uses bundled Caddy).
 
-Edit `js/app.js` or `css/style.css`, then refresh browser.
+Edit any file under `js/` or `css/style.css`, then refresh browser.
 
 ## Architecture
 
-- **`js/app.js`** (~835 lines) — the entire application. All logic, rendering, state, and event binding in one file.
-- **Single state object** (`state` in `js/app.js:74`). All mutations go through `renderTable()` / `renderFocus()` — no two-way binding.
-- **`index.html`** — Bootstrap 5 layout, loads 3 scripts (bootstrap, Sortable, app.js) at bottom.
+- **`js/`** — application logic split into 7 files (see table below), loaded via ordered `<script>` tags at the bottom of `index.html`.
+- **Single state object** (`state` in `js/state.js`). All mutations go through `renderTable()` / `renderFocus()` — no two-way binding.
+- **`index.html`** — Bootstrap 5 layout, loads 9 scripts (bootstrap, Sortable, 7 app files) at bottom.
 - **`server/`** — contains a prebuilt Caddy binary for local serving; not part of the app itself.
 
 ## Conventions
@@ -25,23 +25,23 @@ Edit `js/app.js` or `css/style.css`, then refresh browser.
 - No test framework exists. No lint, typecheck, or CI config.
 - UI text in Chinese. Code comments and README are Chinese + English bilingual.
 - Timestamps are `MM:SS.CC` (centiseconds). SRT output uses `HH:MM:SS,mmm` (milliseconds).
-- `'use strict'` at `js/app.js:17`. No ES modules — uses `var` and IIFE-style helpers.
+- `'use strict'` at the top of every JS file. No ES modules — uses `var` and IIFE-style helpers.
 - Keep additions in the same style: `var`, no template literals, no arrow functions, no `const`/`let`.
 - No `.editorconfig`, no formatting tool. Code uses 2-space indent inconsistently — match surrounding style.
 
-## Key modules (within app.js)
+## JS files (load order matters)
 
-| Lines | Module |
-|-------|--------|
-| 19–53 | Utility functions (`timeToStr`, `strToTime`, `timeToSrt`, etc.) |
-| 54–72 | DOM helpers (`$id`, `el`, `cls`, `append`, `rowIdx`) |
-| 73–90 | State object |
-| 91–132 | LRC parser (`parseLRC`) |
-| 133–158 | Export generators (`generateLRC`, `generateSRT`) |
-| 159–362 | Render functions |
-| 363–380 | Audio time sync |
-| 381–477 | Operations (snap, adjust, add, delete, batch) |
-| 589–835 | Initialization and event binding |
+| # | File | Contents |
+|---|------|----------|
+| 1 | `js/state.js` | State object (`var state = {...}`) |
+| 2 | `js/utils.js` | Utility functions (`timeToStr`, `strToTime`, etc.) + DOM helpers (`$id`, `el`, `cls`, etc.) |
+| 3 | `js/parser.js` | LRC parser (`parseLRC`) |
+| 4 | `js/generators.js` | Export generators (`generateLRC`, `generateSRT`) + download helpers |
+| 5 | `js/render.js` | All render functions (`renderTable`, `renderFocus`, `updateHighlight`, etc.) + `initSortable` |
+| 6 | `js/actions.js` | Audio sync, operations (snap, adjust, add, delete, batch), load, file handlers, keyboard |
+| 7 | `js/app.js` | Init IIFE — all event binding and startup (~265 lines) |
+
+Dependencies are single-direction: `state` / `utils` → `parser` / `generators` → `render` → `actions` → `app`.
 
 ## Gotchas
 
