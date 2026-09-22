@@ -195,6 +195,7 @@ function renderFocus() {
   var line = state.lines[state.currentIdx];
   var locked = line.locked;
   $id('focusLyric').textContent = line.text;
+  fitFocusLyricFont();
   $id('focusTime').value = timeToStr(line.start);
   $id('focusDec').disabled = locked;
   $id('focusInc').disabled = locked;
@@ -209,13 +210,24 @@ function renderFocus() {
   $id('focusNextLine').parentElement.style.display = '';
 }
 
+function fitFocusLyricFont() {
+  var el = $id('focusLyric');
+  var baseSize = 2.2;
+  el.style.fontSize = baseSize + 'rem';
+  if (el.scrollWidth > el.clientWidth && el.clientWidth > 0) {
+    var ratio = el.clientWidth / el.scrollWidth;
+    var newSize = Math.max(0.8, baseSize * ratio);
+    el.style.fontSize = newSize + 'rem';
+  }
+}
+
 function updateTimeDisplay() {
   var audio = state.audio;
   if (!audio || !audio.src) {
     $id('timeDisplay').textContent = '00:00.00 / 00:00.00';
     return;
   }
-  var cur = audio.currentTime || 0;
+  var cur = playbackTime();
   var dur = audio.duration || 0;
   $id('timeDisplay').textContent = timeToStr(cur) + ' / ' + timeToStr(dur);
 }

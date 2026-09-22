@@ -51,6 +51,45 @@ function filenameBase(name) {
   return name.replace(/\.[^.]+$/, '');
 }
 
+// ===== Playback Clock =====
+// audio.currentTime 的刷新频率取决于播放管线（常约 4Hz），逐帧读取会拿到重复的旧值，
+// 导致高亮阶梯式滞后。用 performance.now() 在两次刷新之间插值，得到逐帧连续的位置。
+var _clock = { media: 0, wall: 0, valid: false };
+var CLOCK_MAX_AHEAD = 0.3;
+
+function syncPlaybackClock() {
+  var audio = state.audio;
+  if (!audio) return;
+  _clock.media = audio.currentTime || 0;
+  _clock.wall = performance.now();
+  _clock.valid = true;
+}
+
+function playbackTime() {
+  var audio = state.audio;
+  if (!audio || !audio.src) return 0;
+  var now = performance.now();
+  var t = audio.currentTime || 0;
+  if (audio.paused) {
+    _clock.media = t;
+    _clock.wall = now;
+    _clock.valid = true;
+    return t;
+  }
+  if (!_clock.valid || t !== _clock.media) {
+    _clock.media = t;
+    _clock.wall = now;
+    _clock.valid = true;
+  }
+  var est = _clock.media + (now - _clock.wall) / 1000 * (audio.playbackRate || 1);
+  if (est - t > CLOCK_MAX_AHEAD) {
+    est = t + CLOCK_MAX_AHEAD;
+    _clock.media = t;
+    _clock.wall = now;
+  }
+  return est;
+}
+
 // ===== Helpers =====
 var $id = document.getElementById.bind(document);
 var $q = document.querySelector.bind(document);

@@ -261,7 +261,7 @@ html, body {
 .focus-container {
   text-align: center;
   width: 100%;
-  max-width: 750px;
+  max-width: 92vw;
 }
 
 .focus-nav {
@@ -277,8 +277,6 @@ html, body {
   margin-bottom: 1.5rem;
   padding: 1rem;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   min-height: 5.3rem;
   color: #212529;
 }
@@ -319,6 +317,9 @@ html, body {
   padding: 0.75rem 1rem;
   background: #f8f9fa;
   border-radius: 6px;
+  max-width: 750px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .focus-prev,

@@ -24,11 +24,19 @@
 
   // Audio events
   state.audio.addEventListener('loadedmetadata', function() {
+    syncPlaybackClock();
     updateTimeDisplay();
   });
   // 后台标签页 rAF 暂停时由 timeupdate 兜底保持同步（浏览器节流至约 1-4Hz）
   // Keep sync when the tab is backgrounded (rAF pauses; timeupdate still fires)
   state.audio.addEventListener('timeupdate', onTimeUpdate);
+
+  // 播放位置发生跳变时重设插值时钟基线
+  // Re-baseline the interpolated clock whenever playback position jumps
+  ['play', 'playing', 'pause', 'seeking', 'seeked', 'waiting', 'stalled', 'ratechange', 'ended']
+    .forEach(function(ev) {
+      state.audio.addEventListener(ev, syncPlaybackClock);
+    });
 
   // rAF sync loop
   function syncLoop() {

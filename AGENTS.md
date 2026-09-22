@@ -34,7 +34,7 @@ Edit any file under `js/` or `css/style.css`, then refresh browser.
 | # | File | Contents |
 |---|------|----------|
 | 1 | `js/state.js` | State object (`var state = {...}`) |
-| 2 | `js/utils.js` | Utility functions (`timeToStr`, `strToTime`, etc.) + DOM helpers (`$id`, `el`, `cls`, etc.) |
+| 2 | `js/utils.js` | Utility functions (`timeToStr`, `strToTime`, etc.) + DOM helpers (`$id`, `el`, `cls`, etc.) + interpolated playback clock (`playbackTime` / `syncPlaybackClock`) |
 | 3 | `js/parser.js` | LRC parser (`parseLRC`) |
 | 4 | `js/generators.js` | Export generators (`generateLRC`, `generateSRT`) + download helpers |
 | 5 | `js/render.js` | All render functions (`renderTable`, `renderFocus`, `updateHighlight`, etc.) + `initSortable` |
@@ -51,5 +51,5 @@ Dependencies are single-direction: `state` / `utils` → `parser` / `generators`
 - The 全局偏移 (±0.05s) buttons are **destructive**: `setOffset`/`batchOffset` write the shift directly into each line's `start` (locked lines are skipped) and there is no undo. `state.offset` itself is vestigial (always 0); `state.appliedOffsetStep` tracks the cumulative step count so repeated presses compute incremental deltas.
 - `strToTime` returns `null` on unparseable input (e.g. `1:2.3`, `01:23`, SRT-style `00:01:23,456`); callers restore the previous value instead of writing `00:00.00`. Fractions are rounded to centiseconds (`01:23.456` → `01:23.46`).
 - The LRC parser tolerates 1–2 digit minutes/seconds and 1–3 digit fractions (`[1:02.30]`, `[01:02.5]`): 1 digit = tenths of a second, 3 digits = milliseconds. 3+ digit minutes (`[123:45.67]`) still fall back to a `start: 0` plain line.
-- Highlight sync runs on `requestAnimationFrame` (frame-accurate while the tab is visible) with a `timeupdate` fallback that keeps the highlight following playback when the tab is backgrounded (rAF pauses; `timeupdate` still fires, throttled to ~1–4Hz).
+- Highlight sync runs on `requestAnimationFrame` (while the tab is visible) with a `timeupdate` fallback for backgrounded tabs (rAF pauses; `timeupdate` still fires, throttled to ~1–4Hz). The position comes from `playbackTime()` in `utils.js`, **not** raw `audio.currentTime`: browsers refresh `currentTime` at the media pipeline's cadence (often ~4Hz), so polling it per frame returns the same stale value and the highlight lags by tens–hundreds of ms. `playbackTime()` interpolates between refreshes with `performance.now()` (re-baselined on `play`/`pause`/`seeking`/`seeked`/`waiting`/`playing`/`ratechange`/`ended`/`loadedmetadata`, capped at `CLOCK_MAX_AHEAD` seconds ahead). `snapTime`/`addLineAt`/`updateTimeDisplay` use the same clock so打点 (snapping) and预览 (preview) stay consistent.
 - The header 全选 checkbox is derived UI state: `updateSelectAll()` runs at the top of `renderTable()` and in the row-checkbox `change` handler. Any new code path that mutates `state.selectedIndices` must also sync it (call `updateSelectAll()` or route through `renderTable()`).

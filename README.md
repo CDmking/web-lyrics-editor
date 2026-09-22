@@ -106,16 +106,18 @@ Web-Lyrics-Editor/
 | 文件 | 职责 |
 |------|------|
 | `state.js` | `state` 对象 — 唯一数据源 |
-| `utils.js` | `pad` / `round2` / `timeToStr` / `strToTime` / `timeToSrt` + DOM 辅助函数 |
+| `utils.js` | `pad` / `round2` / `timeToStr` / `strToTime` / `timeToSrt` + DOM 辅助函数 + 插值播放时钟（`playbackTime` / `syncPlaybackClock`） |
 | `parser.js` | `parseLRC` — 解析带时间戳的 LRC 文本 |
 | `generators.js` | `generateLRC` / `generateSRT` / `downloadFile` — 导出 |
 | `render.js` | `renderTable` / `renderFocus` / `updateHighlight` / `initSortable` — 渲染与拖拽 |
-| `actions.js` | `onTimeUpdate` / `snapTime` / `setOffset` / `toggleFocus` / `onKeyDown` — 交互逻辑 |
+| `actions.js` | `onTimeUpdate` / `snapTime` / `setOffset` / `toggleFocus` / `onKeyDown` — 交互逻辑（高亮位置统一取自 `playbackTime()`） |
 | `app.js` | 初始化 IIFE — 事件绑定、rAF 循环、拖放支持、首次渲染 |
 
 **数据流：** `state` 对象为唯一数据源，所有修改通过 `renderTable()` / `renderFocus()` 单向渲染视图，无双向绑定。
 
 **依赖层级：** `state` / `utils` → `parser` / `generators` → `render` → `actions` → `app`
+
+**播放同步：** 浏览器的 `audio.currentTime` 只在播放管线刷新时更新（常约 4Hz），逐帧读取会拿到重复旧值。`utils.js` 中的 `playbackTime()` 用 `performance.now()` 在两次刷新之间插值，高亮、`timeDisplay`、打点（`snapTime` / `addLineAt`）统一使用它，保证逐帧平滑且一致。
 
 ---
 

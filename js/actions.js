@@ -21,7 +21,7 @@ function onTimeUpdate() {
   updateTimeDisplay();
   var audio = state.audio;
   if (!audio || !audio.src || state.lines.length === 0) return;
-  var adj = audio.currentTime - state.offset;
+  var adj = playbackTime() - state.offset;
   var lines = state.lines;
   var idx = -1;
   for (var i = 0; i < lines.length; i++) {
@@ -42,6 +42,7 @@ function setCurrentLine(idx) {
   var audio = state.audio;
   if (audio && audio.src) {
     audio.currentTime = state.lines[idx].start + state.offset;
+    syncPlaybackClock();
   }
 }
 
@@ -51,7 +52,7 @@ function snapTime() {
   if (state.lines[idx].locked) return;
   var audio = state.audio;
   if (!audio || !audio.src) return;
-  state.lines[idx].start = round2(Math.max(0, audio.currentTime - state.offset));
+  state.lines[idx].start = round2(Math.max(0, playbackTime() - state.offset));
   renderTable();
 }
 
@@ -65,8 +66,8 @@ function adjustTime(idx, delta) {
 function addLineAt(idx) {
   var start = 0;
   var audio = state.audio;
-  if (audio && audio.src && isFinite(audio.currentTime)) {
-    start = round2(Math.max(0, audio.currentTime - state.offset));
+  if (audio && audio.src) {
+    start = round2(Math.max(0, playbackTime() - state.offset));
   } else if (idx > 0 && idx <= state.lines.length) {
     start = state.lines[idx - 1].start + 1;
   } else if (state.lines.length > 0) {
