@@ -46,14 +46,22 @@ function setCurrentLine(idx) {
   }
 }
 
-function snapTime() {
-  var idx = state.currentIdx;
+function snapLineAt(idx) {
   if (idx < 0 || idx >= state.lines.length) return;
   if (state.lines[idx].locked) return;
   var audio = state.audio;
   if (!audio || !audio.src) return;
   state.lines[idx].start = round2(Math.max(0, playbackTime() - state.offset));
   renderTable();
+}
+
+function snapTime() {
+  snapLineAt(state.currentIdx);
+}
+
+function snapNextTime() {
+  if (state.currentIdx < 0) return;
+  snapLineAt(state.currentIdx + 1);
 }
 
 function adjustTime(idx, delta) {
@@ -196,6 +204,11 @@ function onKeyDown(e) {
   if (e.key === 's' && !editing) {
     e.preventDefault();
     snapTime();
+    return;
+  }
+  if (e.key === 'd' && !editing) {
+    e.preventDefault();
+    snapNextTime();
     return;
   }
   if (e.key === 'f' && !editing) {

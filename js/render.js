@@ -190,6 +190,7 @@ function renderFocus() {
     $id('focusPrevLine').parentElement.style.display = 'none';
     $id('focusNextLine').textContent = '';
     $id('focusNextLine').parentElement.style.display = 'none';
+    $id('focusSnapNext').disabled = true;
     return;
   }
   var line = state.lines[state.currentIdx];
@@ -200,6 +201,7 @@ function renderFocus() {
   $id('focusDec').disabled = locked;
   $id('focusInc').disabled = locked;
   $id('focusSnap').disabled = locked;
+  $id('focusSnapNext').disabled = state.currentIdx >= state.lines.length - 1 || state.lines[state.currentIdx + 1].locked;
   $id('focusTime').disabled = locked;
   var idxW = String(state.lines.length).length * 2 + 1;
   $id('focusIdx').textContent = (state.currentIdx + 1) + ' / ' + state.lines.length;

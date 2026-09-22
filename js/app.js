@@ -221,6 +221,10 @@
     snapTime();
     if (state.focusMode) renderFocus();
   });
+  $id('focusSnapNext').addEventListener('click', function() {
+    snapNextTime();
+    if (state.focusMode) renderFocus();
+  });
 
   // Metadata inputs
   $id('titleInput').addEventListener('change', function() { state.title = this.value; });
