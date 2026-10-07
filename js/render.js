@@ -98,14 +98,14 @@ function renderTable() {
     lyricInput.value = line.text;
     lyricTd.appendChild(lyricInput);
     var addBtn = el('button');
-    addBtn.className = 'btn-row-add';
+    addBtn.className = 'btn btn-sm btn-outline-secondary btn-row-add';
     addBtn.title = '\u5728\u540e\u6dfb\u52a0';
-    addBtn.textContent = '+';
+    addBtn.textContent = '\u6dfb\u52a0';
     lyricTd.appendChild(addBtn);
     var delBtn = el('button');
-    delBtn.className = 'btn-row-del';
+    delBtn.className = 'btn btn-sm btn-outline-secondary btn-row-del';
     delBtn.title = '\u5220\u9664\u6b64\u884c';
-    delBtn.innerHTML = '&times;';
+    delBtn.textContent = '\u5220\u9664';
     lyricTd.appendChild(delBtn);
 
     append(tr, dragTd, indicator, timeTd, lyricTd);
