@@ -70,18 +70,10 @@
 
   // Offset buttons
   $id('offsetDec').addEventListener('click', function() {
-    if (state.batchMode && state.selectedIndices.length > 0) {
-      batchOffset(-0.05);
-    } else {
-      setOffset(Math.max(-200, state.appliedOffsetStep - 1));
-    }
+    stepOffset(-1);
   });
   $id('offsetInc').addEventListener('click', function() {
-    if (state.batchMode && state.selectedIndices.length > 0) {
-      batchOffset(0.05);
-    } else {
-      setOffset(Math.min(200, state.appliedOffsetStep + 1));
-    }
+    stepOffset(1);
   });
 
   // Mode toggle

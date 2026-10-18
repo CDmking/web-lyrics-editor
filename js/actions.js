@@ -101,6 +101,15 @@ function batchOffset(delta) {
     state.lines[i].start = round2(Math.max(0, state.lines[i].start + delta));
   });
   renderTable();
+  if (state.focusMode) renderFocus();
+}
+
+function stepOffset(sign) {
+  if (state.batchMode && state.selectedIndices.length > 0) {
+    batchOffset(sign * 0.05);
+  } else {
+    setOffset(Math.max(-200, Math.min(200, state.appliedOffsetStep + sign)));
+  }
 }
 
 function setOffset(valCS) {
@@ -194,6 +203,7 @@ function onLyricsText(text) {
 function onKeyDown(e) {
   var tag = e.target.tagName;
   var editing = (tag === 'INPUT' || tag === 'TEXTAREA');
+  var noMod = !e.ctrlKey && !e.metaKey && !e.altKey;
   if (e.key === ' ' && !editing) {
     e.preventDefault();
     var audio = state.audio;
@@ -214,6 +224,28 @@ function onKeyDown(e) {
   if (e.key === 'f' && !editing) {
     e.preventDefault();
     toggleFocus();
+    return;
+  }
+  if (e.key === ',' && !editing && noMod) {
+    e.preventDefault();
+    adjustTime(state.currentIdx, -0.05);
+    if (state.focusMode) renderFocus();
+    return;
+  }
+  if (e.key === '.' && !editing && noMod) {
+    e.preventDefault();
+    adjustTime(state.currentIdx, 0.05);
+    if (state.focusMode) renderFocus();
+    return;
+  }
+  if (e.key === '[' && !editing && noMod) {
+    e.preventDefault();
+    stepOffset(-1);
+    return;
+  }
+  if (e.key === ']' && !editing && noMod) {
+    e.preventDefault();
+    stepOffset(1);
     return;
   }
   if (e.key === 'Escape' && state.focusMode) {
