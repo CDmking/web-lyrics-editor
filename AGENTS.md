@@ -24,7 +24,7 @@ Edit any file under `js/` or `css/style.css`, then refresh browser.
 - No build, no bundler, no package.json. Direct `<script>` tags.
 - No test framework exists. No lint, typecheck, or CI config.
 - UI text in Chinese. Code comments and README are Chinese + English bilingual.
-- Timestamps are `MM:SS.CC` (centiseconds). SRT output uses `HH:MM:SS,mmm` (milliseconds).
+- Timestamps use `MM:SS.FF` with 2–3 fractional digits. Precision is detected per imported file (maximum fraction length, minimum 2) and stored in `state.timePrecision`; SRT output always uses `HH:MM:SS,mmm` (milliseconds).
 - `'use strict'` at the top of every JS file. No ES modules — uses `var` and IIFE-style helpers.
 - Keep additions in the same style: `var`, no template literals, no arrow functions, no `const`/`let`.
 - No `.editorconfig`, no formatting tool. Code uses 2-space indent inconsistently — match surrounding style.
@@ -47,9 +47,10 @@ Dependencies are single-direction: `state` / `utils` → `parser` / `generators`
 
 - **SortableJS** is loaded as `window.Sortable` global (minified CDN copy in `js/Sortable.min.js`).
 - **LRC offset tag** (`[offset:±ms]`) is applied on import but **not** re-exported.
-- Lines with `start: 0` (from plain-text paste) have no timestamp — they display as `00:00.00`.
+- Lines with `start: 0` (from plain-text paste) have no timestamp — they display as `00:00.00` or the current file precision (e.g. `00:00.000`).
 - The 全局偏移 (±0.05s) buttons are **destructive**: `setOffset`/`batchOffset` write the shift directly into each line's `start` (locked lines are skipped) and there is no undo. `state.offset` itself is vestigial (always 0); `state.appliedOffsetStep` tracks the cumulative step count so repeated presses compute incremental deltas.
-- `strToTime` returns `null` on unparseable input (e.g. `1:2.3`, `01:23`, SRT-style `00:01:23,456`); callers restore the previous value instead of writing `00:00.00`. Fractions are rounded to centiseconds (`01:23.456` → `01:23.46`).
+- `strToTime` returns `null` on unparseable input (e.g. `1:2.3`, `01:23`, SRT-style `00:01:23,456`); callers restore the previous value instead of writing `00:00.00`. Fractions are rounded to the current file precision (`state.timePrecision`), not always to centiseconds.
 - The LRC parser tolerates 1–2 digit minutes/seconds and 1–3 digit fractions (`[1:02.30]`, `[01:02.5]`): 1 digit = tenths of a second, 3 digits = milliseconds. 3+ digit minutes (`[123:45.67]`) still fall back to a `start: 0` plain line.
+- Imported precision is file-level: `parseLRC` returns the maximum fraction length across all time tags, clamped to a minimum of 2. A non-10ms `[offset:±ms]` promotes it to 3 so the offset is not lost. All time mutations use `roundTime()`, and LRC export uses `timeToStr()` with `state.timePrecision`.
 - Highlight sync runs on `requestAnimationFrame` (while the tab is visible) with a `timeupdate` fallback for backgrounded tabs (rAF pauses; `timeupdate` still fires, throttled to ~1–4Hz). The position comes from `playbackTime()` in `utils.js`, **not** raw `audio.currentTime`: browsers refresh `currentTime` at the media pipeline's cadence (often ~4Hz), so polling it per frame returns the same stale value and the highlight lags by tens–hundreds of ms. `playbackTime()` interpolates between refreshes with `performance.now()` (re-baselined on `play`/`pause`/`seeking`/`seeked`/`waiting`/`playing`/`ratechange`/`ended`/`loadedmetadata`, capped at `CLOCK_MAX_AHEAD` seconds ahead). `snapTime`/`addLineAt`/`updateTimeDisplay` use the same clock so打点 (snapping) and预览 (preview) stay consistent.
 - The header 全选 checkbox is derived UI state: `updateSelectAll()` runs at the top of `renderTable()` and in the row-checkbox `change` handler. Any new code path that mutates `state.selectedIndices` must also sync it (call `updateSelectAll()` or route through `renderTable()`).

@@ -22,7 +22,7 @@ function generateLRC() {
   if (state.title) lrc += '[ti:' + state.title + ']\n';
   if (state.artist) lrc += '[ar:' + state.artist + ']\n';
   state.lines.forEach(function(line) {
-    var adjusted = round2(line.start + state.offset);
+    var adjusted = line.start + state.offset;
     lrc += '[' + timeToStr(adjusted) + ']' + line.text + '\n';
   });
   return lrc;
@@ -31,10 +31,10 @@ function generateLRC() {
 function generateSRT() {
   var srt = '';
   state.lines.forEach(function(line, i) {
-    var start = round2(line.start + state.offset);
+    var start = line.start + state.offset;
     var end = i < state.lines.length - 1
-      ? round2(state.lines[i + 1].start + state.offset)
-      : round2(start + 5);
+      ? state.lines[i + 1].start + state.offset
+      : start + 5;
     srt += (i + 1) + '\n';
     srt += timeToSrt(start) + ' --> ' + timeToSrt(end) + '\n';
     srt += line.text + '\n\n';

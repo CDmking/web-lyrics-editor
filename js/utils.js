@@ -19,14 +19,19 @@
 // ===== Utilities =====
 function pad(n, w) { return String(Math.floor(n)).padStart(w, '0'); }
 
-function round2(t) { return Math.round(t * 100) / 100; }
+function roundTime(t) {
+  var factor = Math.pow(10, state.timePrecision || 2);
+  return Math.round(t * factor) / factor;
+}
 
-function timeToStr(t) {
-  t = round2(t);
-  var m = Math.floor(t / 60);
-  var s = Math.floor(t % 60);
-  var cs = Math.round((t % 1) * 100);
-  return pad(m, 2) + ':' + pad(s, 2) + '.' + pad(cs, 2);
+function timeToStr(t, digits) {
+  if (digits === undefined) digits = state.timePrecision || 2;
+  var factor = Math.pow(10, digits);
+  var total = Math.round(t * factor);
+  var m = Math.floor(total / (60 * factor));
+  var s = Math.floor((total % (60 * factor)) / factor);
+  var frac = total % factor;
+  return pad(m, 2) + ':' + pad(s, 2) + '.' + pad(frac, digits);
 }
 
 function strToTime(s) {
@@ -34,16 +39,16 @@ function strToTime(s) {
   if (!m) return null;
   var min = parseInt(m[1], 10);
   var sec = parseInt(m[2], 10);
-  var frac = parseFloat('0.' + m[3]);
-  return round2(min * 60 + sec + frac);
+  var frac = parseInt(m[3], 10) / Math.pow(10, m[3].length);
+  return roundTime(min * 60 + sec + frac);
 }
 
 function timeToSrt(t) {
-  t = round2(t);
-  var h = Math.floor(t / 3600);
-  var m = Math.floor((t % 3600) / 60);
-  var s = Math.floor(t % 60);
-  var ms = Math.round((t % 1) * 1000);
+  var total = Math.round(t * 1000);
+  var h = Math.floor(total / 3600000);
+  var m = Math.floor((total % 3600000) / 60000);
+  var s = Math.floor((total % 60000) / 1000);
+  var ms = total % 1000;
   return pad(h, 2) + ':' + pad(m, 2) + ':' + pad(s, 2) + ',' + pad(ms, 3);
 }
 

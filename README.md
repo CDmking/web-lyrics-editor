@@ -8,6 +8,7 @@
 
 - **音频支持** — MP3 / WAV / FLAC / OGG / AAC / M4A / WMA
 - **歌词导入** — 解析标准 LRC 文件（含 `[ti:]`、`[ar:]`、`[offset:]` 元信息），也支持粘贴纯文本歌词（无时间戳行自动归零）
+- **导入精度识别** — 自动识别时间戳小数点后位数（最低 2 位、最高 3 位），显示与导出不再固定截断为 2 位
 - **拖放加载** — 直接拖拽音频或 LRC 文件到页面
 - **表格模式** — 逐行编辑时间戳与歌词文本，实时增删行
 - **专注模式** — 大字体单行显示，搭配上/下一句预览（可用「上下文」开关隐藏），适合逐句精调
@@ -110,7 +111,7 @@ Web-Lyrics-Editor/
 | 文件 | 职责 |
 |------|------|
 | `state.js` | `state` 对象 — 唯一数据源 |
-| `utils.js` | `pad` / `round2` / `timeToStr` / `strToTime` / `timeToSrt` + DOM 辅助函数 + 插值播放时钟（`playbackTime` / `syncPlaybackClock`） |
+| `utils.js` | `pad` / `roundTime` / `timeToStr` / `strToTime` / `timeToSrt` + DOM 辅助函数 + 插值播放时钟（`playbackTime` / `syncPlaybackClock`） |
 | `parser.js` | `parseLRC` — 解析带时间戳的 LRC 文本 |
 | `generators.js` | `generateLRC` / `generateSRT` / `downloadFile` — 导出 |
 | `render.js` | `renderTable` / `renderFocus` / `updateHighlight` / `initSortable` — 渲染与拖拽 |

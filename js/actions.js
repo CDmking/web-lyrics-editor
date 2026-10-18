@@ -51,7 +51,7 @@ function snapLineAt(idx) {
   if (state.lines[idx].locked) return;
   var audio = state.audio;
   if (!audio || !audio.src) return;
-  state.lines[idx].start = round2(Math.max(0, playbackTime() - state.offset));
+  state.lines[idx].start = roundTime(Math.max(0, playbackTime() - state.offset));
   renderTable();
 }
 
@@ -67,7 +67,7 @@ function snapNextTime() {
 function adjustTime(idx, delta) {
   if (idx < 0 || idx >= state.lines.length) return;
   if (state.lines[idx].locked) return;
-  state.lines[idx].start = round2(Math.max(0, state.lines[idx].start + delta));
+  state.lines[idx].start = roundTime(Math.max(0, state.lines[idx].start + delta));
   renderTable();
 }
 
@@ -75,7 +75,7 @@ function addLineAt(idx) {
   var start = 0;
   var audio = state.audio;
   if (audio && audio.src) {
-    start = round2(Math.max(0, playbackTime() - state.offset));
+    start = roundTime(Math.max(0, playbackTime() - state.offset));
   } else if (idx > 0 && idx <= state.lines.length) {
     start = state.lines[idx - 1].start + 1;
   } else if (state.lines.length > 0) {
@@ -98,7 +98,7 @@ function deleteLine(idx) {
 function batchOffset(delta) {
   state.selectedIndices.forEach(function(i) {
     if (state.lines[i].locked) return;
-    state.lines[i].start = round2(Math.max(0, state.lines[i].start + delta));
+    state.lines[i].start = roundTime(Math.max(0, state.lines[i].start + delta));
   });
   renderTable();
   if (state.focusMode) renderFocus();
@@ -118,7 +118,7 @@ function setOffset(valCS) {
     state.appliedOffsetStep = valCS;
     state.lines.forEach(function(line) {
       if (line.locked) return;
-      line.start = round2(Math.max(0, line.start + delta));
+      line.start = roundTime(Math.max(0, line.start + delta));
     });
     renderTable();
     if (state.focusMode) renderFocus();
@@ -150,8 +150,9 @@ function exitBatchMode() {
 }
 
 // ===== Load Data =====
-function loadLyricsFromLines(newLines) {
+function loadLyricsFromLines(newLines, precision) {
   state.lines = newLines;
+  state.timePrecision = Math.max(2, precision || 2);
   state.currentIdx = state.lines.length > 0 ? 0 : -1;
   state.offset = 0;
   state.appliedOffsetStep = 0;
@@ -186,7 +187,7 @@ function onLRCFile(file) {
     var result = parseLRC(e.target.result);
     state.title = result.title;
     state.artist = result.artist;
-    loadLyricsFromLines(result.lines);
+    loadLyricsFromLines(result.lines, result.precision);
   };
   reader.readAsText(file);
 }
@@ -196,7 +197,7 @@ function onLyricsText(text) {
   var result = parseLRC(text);
   if (!state.title && result.title) state.title = result.title;
   if (!state.artist && result.artist) state.artist = result.artist;
-  loadLyricsFromLines(result.lines);
+  loadLyricsFromLines(result.lines, result.precision);
 }
 
 // ===== Keyboard =====

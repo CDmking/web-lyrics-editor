@@ -25,6 +25,7 @@ var state = {
   currentIdx: -1,
   offset: 0,
   appliedOffsetStep: 0,
+  timePrecision: 2,
   focusMode: false,
   showPrevNext: true,
   title: '',

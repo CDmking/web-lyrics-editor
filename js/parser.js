@@ -22,6 +22,7 @@ function parseLRC(text) {
   var title = '';
   var artist = '';
   var fileOffsetMs = 0;
+  var precision = 0;
   text.split('\n').forEach(function(line) {
     line = line.trim();
     if (!line) return;
@@ -34,6 +35,7 @@ function parseLRC(text) {
       var frac = parseInt(match[3], 10);
       var div = match[3].length === 1 ? 10 : (match[3].length === 3 ? 1000 : 100);
       times.push(min * 60 + sec + frac / div);
+      if (match[3].length > precision) precision = match[3].length;
       remaining = remaining.slice(match[0].length);
     }
     if (times.length > 0) {
@@ -53,7 +55,8 @@ function parseLRC(text) {
   if (fileOffsetMs !== 0) {
     var offsetSec = fileOffsetMs / 1000;
     lines.forEach(function(l) { l.start = Math.max(0, l.start + offsetSec); });
+    if (precision > 0 && fileOffsetMs % 10 !== 0) precision = Math.max(precision, 3);
   }
   lines.sort(function(a, b) { return a.start - b.start; });
-  return { lines: lines, title: title, artist: artist };
+  return { lines: lines, title: title, artist: artist, precision: Math.max(2, precision) };
 }
