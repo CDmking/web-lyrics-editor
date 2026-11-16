@@ -150,23 +150,29 @@ function exitBatchMode() {
 }
 
 // ===== Load Data =====
-function loadLyricsFromLines(newLines, precision) {
+function loadLyricsFromLines(newLines, precision, title, artist) {
   state.lines = newLines;
   state.timePrecision = Math.max(2, precision || 2);
   state.currentIdx = state.lines.length > 0 ? 0 : -1;
   state.offset = 0;
   state.appliedOffsetStep = 0;
+  setMetadata(title, artist);
   if (state.focusMode) {
     renderFocus();
   } else {
     renderTable();
   }
-  syncMetadata();
 }
 
-function syncMetadata() {
-  if (state.title) $id('titleInput').value = state.title;
-  if (state.artist) $id('artistInput').value = state.artist;
+// 附加信息随歌词整体替换：新歌词没有 [ti:] / [ar:] 时清空输入框，
+// 避免上一份歌词的标题、歌手残留并被导出到新歌词中
+// Metadata is replaced together with its lyrics: when the new lyrics carry no
+// [ti:] / [ar:], the inputs are cleared so stale values cannot leak into exports
+function setMetadata(title, artist) {
+  state.title = title || '';
+  state.artist = artist || '';
+  $id('titleInput').value = state.title;
+  $id('artistInput').value = state.artist;
 }
 
 // ===== File Handlers =====
@@ -178,6 +184,9 @@ function onAudioFile(file) {
   $id('audioName').textContent = file.name;
   state.audio.src = state.audioUrl;
   state.audio.load();
+  // 换歌即换附加信息：音频本身不携带 [ti:] / [ar:]，先清空，待新歌词载入后再填充
+  // A new track carries no lyrics metadata: clear stale title/artist until new lyrics load
+  setMetadata('', '');
 }
 
 function onLRCFile(file) {
@@ -185,9 +194,7 @@ function onLRCFile(file) {
   var reader = new FileReader();
   reader.onload = function(e) {
     var result = parseLRC(e.target.result);
-    state.title = result.title;
-    state.artist = result.artist;
-    loadLyricsFromLines(result.lines, result.precision);
+    loadLyricsFromLines(result.lines, result.precision, result.title, result.artist);
   };
   reader.readAsText(file);
 }
@@ -195,9 +202,7 @@ function onLRCFile(file) {
 function onLyricsText(text) {
   if (!text.trim()) return;
   var result = parseLRC(text);
-  if (!state.title && result.title) state.title = result.title;
-  if (!state.artist && result.artist) state.artist = result.artist;
-  loadLyricsFromLines(result.lines, result.precision);
+  loadLyricsFromLines(result.lines, result.precision, result.title, result.artist);
 }
 
 // ===== Keyboard =====
